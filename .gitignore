@@ -29,3 +29,19 @@ pgdata/
 
 # Hackathon handbook is a private reference, not part of the submission
 docs/*.pdf
+
+# AI coding assistants: local state, worktrees and caches. Never part of the submission.
+.kilo/
+.claude/
+.cursor/
+.windsurf/
+.codex/
+.gemini/
+.continue/
+.agents/
+.ai/
+.copilot/
+.roo/
+.cline/
+.trae/
+.aider*

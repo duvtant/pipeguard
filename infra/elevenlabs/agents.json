@@ -1,0 +1,10 @@
+{
+    "agents": [
+        {
+            "config": "agent_configs/PipeGuard-Dispatcher.json",
+            "id": "agent_0201m40dhg4pfdqaq537zb3ckdrv",
+            "branch_id": "agtbrch_4701m40dhj6wfzmanhrm0nrwh0qp",
+            "version_id": "agtvrsn_9801m40dnzybfq38y61jm70h40e9"
+        }
+    ]
+}

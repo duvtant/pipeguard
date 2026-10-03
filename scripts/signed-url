@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Mint a short-lived signed URL for the PipeGuard agent (valid 15 minutes) to talk to it directly,
+# before our backend exists. Paste the result into the dev voice page: http://localhost:5173/dev/voice
+#   ./scripts/signed-url              -> production environment
+#   ./scripts/signed-url backup       -> ElevenLabs environment "backup"
+# Needs ELEVENLABS_API_KEY and ELEVENLABS_AGENT_ID in .env (repo root) or the shell.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+[ -f .env ] && set -a && . ./.env && set +a
+: "${ELEVENLABS_API_KEY:?set ELEVENLABS_API_KEY in .env}"
+: "${ELEVENLABS_AGENT_ID:?set ELEVENLABS_AGENT_ID in .env (see: elevenlabs agents list)}"
+ENVIRONMENT="${1:-${ELEVENLABS_ENVIRONMENT:-production}}"
+curl -fsS -G "https://api.elevenlabs.io/v1/convai/conversation/get-signed-url" \
+  --data-urlencode "agent_id=${ELEVENLABS_AGENT_ID}" \
+  --data-urlencode "include_conversation_id=true" \
+  --data-urlencode "environment=${ENVIRONMENT}" \
+  -H "xi-api-key: ${ELEVENLABS_API_KEY}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['signed_url'])"

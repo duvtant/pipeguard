@@ -9,7 +9,7 @@
 | Person | Role | Guide |
 |---|---|---|
 | **Olise** | ML engine: training, prediction, risk, scheduler, simulation, tuning, feedback | `01_OLISE_ml-engine.md` |
-| **Ebube** | Backend: database, simulator, API, SSE, voice endpoints, guardrails, Docker, tunnel, deployment | `02_EBUBE_backend-api.md` |
+| **Ebube** | Backend: database, simulator, API, SSE, voice endpoints, guardrails, Docker, Caddy, deployment | `02_EBUBE_backend-api.md` |
 | **David** | Dashboard, technician phone page, ElevenLabs agent, LLM test, pitch deck, submission | `03_DAVID_dashboard-voice-pitch.md` |
 
 > **Rule for coding agents:** do not invent architecture. If the docs do not answer something, write the question in `docs/techstack.md` section 19 (Open questions) and use the stated default. If this contract and `techstack.md` disagree, `techstack.md` wins and the contract gets fixed.
@@ -50,7 +50,7 @@
 | Language codes | `en`, `fr` |
 | `sim_day` | Integer. Negative values are backfilled warm-up history. 1 simulated day = 1 NASA cycle |
 | Simulated calendar | `sim_day` 0 is the Monday given by `calendar_start` in `scenario.json`. "Friday" always means a simulated Friday |
-| Public URL | `https://pipeguard.blunelabs.com` (named Cloudflare tunnel) |
+| Public URL | `https://pipeguard.blunelabs.com` (`A` record at Porkbun to the Hetzner server, HTTPS by Caddy) |
 | Model version string | `v1`, `v2`, ... written to `metadata.json` and stored on every prediction |
 
 ### Enums (exact spellings)
@@ -214,7 +214,7 @@ All times Mountain Time. Today is Saturday, October 3. Adjust the early slots to
 
 | When | Olise | Ebube | David |
 |---|---|---|---|
-| **First 30 min** | `core/contracts.py` v0 | Git repo + skeleton + Docker Compose with `db`; schema in `models.py` | Vite app skeleton, theme and routes, tunnel/zone check, create the ElevenLabs agent |
+| **First 30 min** | `core/contracts.py` v0 | Git repo + skeleton + Docker Compose with `db`; schema in `models.py` | Vite app skeleton, theme and routes, point the domain at the server, create the ElevenLabs agent |
 | **First 90 min** | v0 model, `oof_predictions.parquet`, `scenario.json` v0 | Simulator streaming from the scenario into `readings`; API with fixtures | Fleet page against fixtures; first agent test call |
 | **12:00 PM checkpoint** | Engine predicting live (fold models) | Fleet endpoint on real predictions, SSE working | Fleet page showing live predictions; `/field` rings and connects |
 | **Afternoon** | Scheduler, simulation, tuning, quality checks, feedback | Tool endpoints, webhook, call state machine, guardrails, test mode, admin reset | Impact tab, decision log, Test mode, LLM test (12.10), recorded call |
@@ -256,7 +256,7 @@ Run these on the deployed stack. A failure is an incident, not a note.
 | Item | Suggested owner |
 |---|---|
 | Link the local folder to `github.com/duvtant/pipeguard`, push `docs/`, then Ebube pushes the skeleton | David, then Ebube |
-| Confirm `blunelabs.com` DNS is managed by Cloudflare (needed for the named tunnel) | David |
+| Add the Porkbun `A` record `pipeguard` pointing at the Hetzner server (Ebube gives David the IP) | David |
 | Option A approval in writing from organizers (deadline tonight 11:59 PM) | David |
 | Discord mentor question for the ElevenLabs Creator tier (French, credits) | David |
 | A French speaker for the stage final (pre-arranged at Sunday lunch) | David |

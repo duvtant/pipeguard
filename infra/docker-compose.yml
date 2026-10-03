@@ -39,7 +39,7 @@ services:
     <<: *python
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000   # ONE worker on purpose (in-process SSE fan-out)
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/health"]
       interval: 5s
@@ -61,23 +61,33 @@ services:
       context: ..
       dockerfile: web/Dockerfile
     ports:
-      - "${WEB_PORT:-8088}:80"
+      - "127.0.0.1:${WEB_PORT:-8088}:80"
     depends_on:
       api:
         condition: service_healthy
     restart: unless-stopped
 
-  # Public HTTPS via the named tunnel (pipeguard.blunelabs.com -> http://web:80).
-  # Off by default: `docker compose --profile tunnel up`. NEVER run the same token on two machines at once.
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    profiles: ["tunnel"]
-    command: tunnel run
+  # Public HTTPS. Caddy listens on 80/443, gets and renews the Let's Encrypt certificate by itself,
+  # and passes requests to the web container. Only used on the server: `make prod`.
+  # Needs the Porkbun A record (pipeguard.blunelabs.com -> server IP) in place first.
+  caddy:
+    image: caddy:2
+    profiles: ["prod"]
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
     environment:
-      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+      DOMAIN: ${DOMAIN:-pipeguard.blunelabs.com}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data     # keeps the certificate. Do NOT delete it (Let's Encrypt rate-limits re-issuing).
+      - caddy_config:/config
     depends_on:
       - web
     restart: unless-stopped
 
 volumes:
   pgdata:
+  caddy_data:
+  caddy_config:

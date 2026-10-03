@@ -1,11 +1,11 @@
 COMPOSE = docker compose -f infra/docker-compose.yml
 
-.PHONY: up down logs build tunnel web-dev test reset evaluate train tune
+.PHONY: up down logs build prod web-dev test reset evaluate train tune
 up:      ; $(COMPOSE) up --build -d
 down:    ; $(COMPOSE) down
 build:   ; $(COMPOSE) build
 logs:    ; $(COMPOSE) logs -f --tail=100
-tunnel:  ; $(COMPOSE) --profile tunnel up -d cloudflared
+prod:    ; $(COMPOSE) --profile prod up -d --build   # server only: adds Caddy (HTTPS on 80/443)
 web-dev: ; cd web && pnpm dev
 test:    ; $(COMPOSE) run --rm api python -m pytest -q
 reset:   ; ./scripts/reset

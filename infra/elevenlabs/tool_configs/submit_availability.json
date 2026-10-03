@@ -1,0 +1,49 @@
+{
+  "name": "submit_availability",
+  "type": "webhook",
+  "description": "Use as soon as the technician has clearly said the earliest day they can service the unit. Pass their words exactly in earliest_day_text, in any language (for example 'not before Friday' or 'pas avant vendredi'). Do not call it before the day is clear. Do not call it twice for the same answer. Read the returned 'say' sentence aloud word for word.",
+  "api_schema": {
+    "method": "POST",
+    "url": "https://{{system__env_api_host}}/api/voice/tools/submit-availability",
+    "request_headers": {
+      "Content-Type": "application/json",
+      "Authorization": {
+        "secret_id": "nJXCAQXdMQPBMKVITm5F"
+      }
+    },
+    "request_body_schema": {
+      "type": "object",
+      "description": "Request body for submit_availability",
+      "properties": {
+        "unit_id": {
+          "type": "string",
+          "dynamic_variable": "unit_id"
+        },
+        "technician_id": {
+          "type": "string",
+          "dynamic_variable": "technician_id"
+        },
+        "earliest_day_text": {
+          "type": "string",
+          "description": "The technician's own words for the earliest day they can service the unit, exactly as said."
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional short note from the technician, or empty."
+        }
+      },
+      "required": [
+        "unit_id",
+        "technician_id",
+        "earliest_day_text"
+      ]
+    }
+  },
+  "response_timeout_secs": 10,
+  "disable_interruptions": false,
+  "force_pre_tool_speech": false,
+  "assignments": [],
+  "dynamic_variables": {
+    "dynamic_variable_placeholders": {}
+  }
+}

@@ -1,0 +1,9 @@
+# Public HTTPS for the PipeGuard server. Caddy obtains and renews the certificate automatically
+# once the DNS A record for the domain points at this server and ports 80/443 are reachable.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:80 {
+		# Do not buffer: the live event streams (SSE) must reach the browser immediately.
+		flush_interval -1
+	}
+}

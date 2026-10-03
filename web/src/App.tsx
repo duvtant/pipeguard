@@ -1,5 +1,6 @@
 import { Link, Route, Routes } from 'react-router-dom'
 import Placeholder from '@/pages/Placeholder'
+import VoiceSmoke from '@/pages/dev/VoiceSmoke'
 
 // Manager dashboard routes + the technician phone page. Pages are stubs: see
 // docs/delegation/03_DAVID_dashboard-voice-pitch.md section 3.4 for what each one shows.
@@ -17,6 +18,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <Routes>
+        {/* Dev-only voice smoke test (plan P1.11); removed or hidden before the freeze */}
+        {import.meta.env.DEV && <Route path="/dev/voice" element={<VoiceSmoke />} />}
         {/* Technician phone page: mobile-first, no manager nav */}
         <Route path="/field/:fieldPageId" element={<Placeholder title="Technician phone page" />} />
         {/* Test mode: not in the manager's nav, needs the admin token */}

@@ -1,0 +1,54 @@
+{
+  "name": "feedback",
+  "type": "webhook",
+  "description": "Use when the technician says whether the warning was right: confirmed_wear if the wear is real, looks_fine if the unit looks fine (a false alarm), part_replaced if a part was replaced.",
+  "api_schema": {
+    "method": "POST",
+    "url": "https://{{system__env_api_host}}/api/voice/tools/feedback",
+    "request_headers": {
+      "Content-Type": "application/json",
+      "Authorization": {
+        "secret_id": "nJXCAQXdMQPBMKVITm5F"
+      }
+    },
+    "request_body_schema": {
+      "type": "object",
+      "description": "Request body for feedback",
+      "properties": {
+        "unit_id": {
+          "type": "string",
+          "dynamic_variable": "unit_id"
+        },
+        "technician_id": {
+          "type": "string",
+          "dynamic_variable": "technician_id"
+        },
+        "verdict": {
+          "type": "string",
+          "description": "The technician's verdict.",
+          "enum": [
+            "confirmed_wear",
+            "looks_fine",
+            "part_replaced"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional short note, or empty."
+        }
+      },
+      "required": [
+        "unit_id",
+        "technician_id",
+        "verdict"
+      ]
+    }
+  },
+  "response_timeout_secs": 10,
+  "disable_interruptions": false,
+  "force_pre_tool_speech": false,
+  "assignments": [],
+  "dynamic_variables": {
+    "dynamic_variable_placeholders": {}
+  }
+}

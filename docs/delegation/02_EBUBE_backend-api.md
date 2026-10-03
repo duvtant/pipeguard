@@ -1,6 +1,6 @@
 # Ebube: Backend
 
-**You own everything that stores, moves or serves data:** the database, the historian simulator, the FastAPI service (REST, live updates, the endpoints ElevenLabs calls), the call guardrails and call state, and Docker, the tunnel and deployment, including the laptop fallback.
+**You own everything that stores, moves or serves data:** the database, the historian simulator, the FastAPI service (REST, live updates, the endpoints ElevenLabs calls), the call guardrails and call state, and Docker, Caddy (HTTPS) and deployment on the Hetzner server, including the laptop fallback.
 
 This is 20% of the score (Execution & Software Architecture) and it decides whether the demo is reliable (part of the 15% for Presentation & Demo Quality). If your layer is solid, nobody else's work fails on stage.
 
@@ -31,7 +31,7 @@ Repo: https://github.com/duvtant/pipeguard. Branches: `ebube/...`.
 core/config.py  core/db.py  core/models.py  core/alerts.py
 api/            main.py, deps.py, routers/ (fleet, plan, simulate, voice, field, webhooks, testmode, admin), fixtures/
 simulator/      worker.py
-infra/          docker-compose.yml, db/init.sql, seed.py, nginx/, cloudflared/
+infra/          docker-compose.yml, db/init.sql, seed.py, nginx/, Caddyfile, DEPLOY_HETZNER.md
 scripts/        preflight, reset
 ```
 You **import** (never edit) Olise's pure functions from `core/` (`scheduler`, `simulate`, `feedback`, `risk`, and so on). If the signature is wrong or a field is missing (for example the scheduler diff), tell Olise. David owns `web/`, `infra/elevenlabs/` and `infra/recorded_call.json`.
@@ -57,7 +57,7 @@ You **import** (never edit) Olise's pure functions from `core/` (`scheduler`, `s
 4. Real read endpoints and SSE (once Olise's engine writes predictions).
 5. Voice: field endpoints, tool endpoints, webhook, call state, guardrails.
 6. Test mode, admin reset, simulate-call, work orders, `/api/simulate`.
-7. Deploy: tunnel, nginx, healthchecks, laptop fallback, preflight.
+7. Deploy on Hetzner: Caddy, nginx, healthchecks, laptop fallback, preflight.
 
 ---
 
@@ -144,7 +144,7 @@ Commit one JSON fixture per endpoint (`api/fixtures/`), realistic and complete (
 ### 8.4 Technician (field) endpoints
 `/api/field/{field_page_id}/...` (the slug is unguessable; that is the only protection, which is fine for a single-tenant demo).
 - **`stream` (SSE):** on connect, immediately send any call request for this technician that is still `ringing` and not expired (a phone that connects after the ring started must still ring), then stream new `ring` events. Include `expires_at` so the page can show a countdown.
-- **`answer`:** atomically move the call request `ringing -> answered` (a conditional `UPDATE ... WHERE state = 'ringing' AND ring_expires_at > now()`; if it matched no row, return a clear "call expired" answer). Then request the signed URL from ElevenLabs server side: `GET https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=...&include_conversation_id=true` with header `xi-api-key`. Store the `conversation_id` from the response on a new `calls` row (confirm the exact response field name against the live response). Return the `signed_url`, `language` and the `dynamic_variables` (all strings; contract section 4.3). Use `httpx` with a short timeout (about 3 s). On failure return a body that tells the page to show the manual fallback instead of hanging.
+- **`answer`:** atomically move the call request `ringing -> answered` (a conditional `UPDATE ... WHERE state = 'ringing' AND ring_expires_at > now()`; if it matched no row, return a clear "call expired" answer). Then request the signed URL from ElevenLabs server side: `GET https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=...&include_conversation_id=true&environment=${ELEVENLABS_ENVIRONMENT}` with header `xi-api-key`. Store the `conversation_id` from the response on a new `calls` row (confirm the exact response field name against the live response). Return the `signed_url`, `language` and the `dynamic_variables` (all strings; contract section 4.3). Use `httpx` with a short timeout (about 3 s). On failure return a body that tells the page to show the manual fallback instead of hanging.
 - **`decline`:** the same transition to `missed` and trigger the backup flow immediately.
 - **`feedback`:** manual verdict fallback; same code path as the voice `feedback` tool.
 - **Conversation report:** accept `POST .../conversation` with the `conversation_id` on connect and on disconnect (idempotent). The primary link between a call and a request is the `call_request_id` echoed back in the webhook's dynamic variables (see 8.6), so a missing report is not fatal.
@@ -233,7 +233,7 @@ ringing --answer--> answered --call ends--> done
 | `api` | `uvicorn api.main:app --host 0.0.0.0 --port 8000` (one worker), healthcheck on `/api/health` |
 | `engine`, `simulator` | Same image, `python -m engine.worker` and `python -m simulator.worker` |
 | `web` | David's Vite build served by nginx, proxies `/api` to `api` |
-| `cloudflared` | Public tunnel (below) |
+| `caddy` | Public HTTPS on 80/443 for `pipeguard.blunelabs.com`; proxies to `web` (below). Profile `prod`, started with `make prod` |
 
 - `depends_on` with `condition: service_healthy`, and `restart: unless-stopped` on every service.
 - `PYTHONUNBUFFERED=1`; read config from `.env` through `pydantic-settings`; `.dockerignore` excludes `.env`, `node_modules`, `.git`, and the raw data where not needed.
@@ -245,20 +245,21 @@ ringing --answer--> answered --call ends--> done
 - Proxy `/api/` to `http://api:8000` with `proxy_http_version 1.1`, `proxy_set_header Connection ""`, `proxy_buffering off`, and a long `proxy_read_timeout` (about 3600 s) so SSE is not buffered or cut. Pass `Host` and `X-Forwarded-*`.
 - gzip for static assets, not for the event stream.
 
-### Cloudflare named tunnel (`pipeguard.blunelabs.com`)
-Details: `techstack.md` section 15.2.
-- Run `cloudflare/cloudflared` with `command: tunnel run` and `TUNNEL_TOKEN` from `.env`. In the Cloudflare Zero Trust dashboard, set the public hostname `pipeguard.blunelabs.com` to `http://web:80`.
-- **Prerequisite:** `blunelabs.com` must be a Cloudflare-managed zone for the named tunnel's DNS record. Confirm with David right away. If it is not, the fallback is a Caddy + A record setup, or (last resort) a quick tunnel, which changes URL on every restart and breaks the ElevenLabs tool and webhook URLs.
-- **Never run the same tunnel token on two machines at once.** Both would become connectors for the hostname and requests could land on the wrong stack. For the fallback use a separate hostname (`pipeguard-backup.blunelabs.com`) and tell David to prepare a second ElevenLabs agent pointing at it, or stop the server's `cloudflared` before starting the laptop's.
+### Public HTTPS: Hetzner + Porkbun + Caddy
+Full steps: `infra/DEPLOY_HETZNER.md`; details: `techstack.md` section 15.2.
+- DNS stays at **Porkbun**. David adds one `A` record: `pipeguard` pointing at the server's IPv4. You give him the IP. Check with `dig +short pipeguard.blunelabs.com`.
+- **Caddy** (already in `infra/docker-compose.yml` and `infra/Caddyfile`) listens on 80 and 443 and gets the Let's Encrypt certificate by itself. Run `make prod` on the server. If HTTPS fails, check `docker compose logs caddy` (usually DNS has not propagated or 80/443 is blocked).
+- **Firewall:** Hetzner Cloud Firewall allows `80/tcp`, `443/tcp`, `443/udp`, and `22/tcp` from your IP only. **Docker bypasses ufw**, so compose publishes only Caddy and binds `api` and `web` to `127.0.0.1`. Never publish `db`.
+- Keep the `caddy_data` volume (the certificate). Deleting it triggers re-issuance, which Let's Encrypt rate-limits.
 
 ### Laptop fallback
-The same Compose file, built on the laptop. Test it end to end Saturday night, including one real voice call through the backup hostname. Keep the ElevenLabs agent id for the backup in `.env` so switching is one setting. Document the switch as five numbered steps.
+The same Compose file, built on the laptop (build on each machine, the CPU architectures differ). A laptop is **not reachable from the internet**, so ElevenLabs cannot call its tool endpoints: the laptop fallback runs the whole stack locally and demos with **Simulate call** (no live voice). If a live call from a laptop is ever needed, start a quick tunnel and have David update the `api_host` `backup` value with `elevenlabs environment-variables update`; your `answer` endpoint then passes `environment=${ELEVENLABS_ENVIRONMENT}` (`backup`) on the `get-signed-url` request. Test the laptop copy end to end Saturday night.
 
 ### Preflight script (`scripts/preflight`)
 One command that prints green or red for: containers healthy, `/api/health` ok, scenario seeded and clock at day 0, model version, fallback artifacts present, the **public URL reachable from outside** (run `curl` against `https://pipeguard.blunelabs.com/api/health` over the hotspot), ElevenLabs key and agent id valid, webhook secret set, tool secret set, no `.env` in the git index. David runs it before every rehearsal and before the pitch.
 
 ### Secrets
-`ELEVENLABS_API_KEY`, `VOICE_TOOL_SECRET`, `ELEVENLABS_WEBHOOK_SECRET`, `ADMIN_TOKEN`, `CLOUDFLARE_TUNNEL_TOKEN` exist only in `.env` on the server and laptop. Never in the repo, the image, logs or `VITE_` variables. Scan history before the submission (the repo is public). Rotate anything that was ever pasted into the group chat.
+`ELEVENLABS_API_KEY`, `VOICE_TOOL_SECRET`, `ELEVENLABS_WEBHOOK_SECRET`, `ADMIN_TOKEN` exist only in `.env` on the server and laptop. Never in the repo, the image, logs or `VITE_` variables. Scan history before the submission (the repo is public). Rotate anything that was ever pasted into the group chat.
 
 ---
 
@@ -328,7 +329,7 @@ Write these with `pytest` against a test Postgres (the Compose `db`):
 - Timers held in memory.
 - Returning 4xx or 5xx from a voice tool.
 - Letting the simulate-call fallback take a different code path than a real call.
-- Running the same tunnel token on two machines.
+- Publishing `api`, `db` or `web` on a public interface. Docker bypasses the host firewall: bind them to `127.0.0.1` and expose only Caddy.
 - Building the image on one CPU architecture and running it on another.
 - Forgetting `libgomp1` (the engine crashes on import of LightGBM).
 - Putting a secret in a `VITE_` variable or in the repo.

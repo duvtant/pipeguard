@@ -186,7 +186,7 @@ flowchart LR
 | **FastAPI + Server-Sent Events** | Python keeps model and API in one language; SSE is one-way, simple and proxy-friendly, with polling fallback |
 | **React + Vite** | A product-grade manager dashboard and a mobile technician page from one codebase |
 | **ElevenLabs Agents** | One platform for speech-to-text, LLM, text-to-speech and turn-taking; our API is exposed to the agent as authenticated tools, so a spoken answer changes real state |
-| **Docker Compose + Cloudflare named tunnel** | The same setup on the server and a laptop fallback; a stable HTTPS address for the voice platform to call |
+| **Docker Compose + Caddy on a Hetzner server** | One command brings up the whole stack; Caddy gives automatic HTTPS at a stable address for the voice platform to call |
 | **Read-only by design** | Reads sensor data the operator already stores; never writes to control systems; humans decide |
 
 Full technical specification: [`docs/techstack.md`](docs/techstack.md). Schema, API, message flow and failure modes are all in it.
@@ -272,7 +272,7 @@ simulator/   historian simulator: clock, streaming, fault injection
 api/         FastAPI: REST, live updates, voice tool endpoints, webhooks
 web/         React: manager dashboard and technician phone page
 ml/          training, evaluation, tuning, scenario generation, artifacts, tests
-infra/       Docker Compose, nginx, tunnel, seed data
+infra/       Docker Compose, nginx, Caddy, seed data
 docs/        overview, technical specification, team guides, LLM test results
 ```
 
@@ -337,7 +337,7 @@ The handbook asks for responsible, transparent agent design and attention to alg
 ## 12. Originality and attribution
 
 - All application code was written during the hackathon window (October 2 to 4, 2026); the commit history in this repository shows it. [FILL: confirm that the baseline test script behind the 27.5 → 14.8 result was also written in the window, or cite it as reused starter code.]
-- Open-source building blocks: PostgreSQL, FastAPI, SQLModel, psycopg, Pydantic, LightGBM, scikit-learn, pandas, NumPy, PyArrow, React, Vite, Tailwind CSS, Recharts, TanStack Query, React Router, nginx, Docker, Cloudflare Tunnel, and the ElevenLabs SDKs.
+- Open-source building blocks: PostgreSQL, FastAPI, SQLModel, psycopg, Pydantic, LightGBM, scikit-learn, pandas, NumPy, PyArrow, React, Vite, Tailwind CSS, Recharts, TanStack Query, React Router, nginx, Docker, Caddy, and the ElevenLabs SDKs.
 - Data: NASA C-MAPSS FD001 (see §14).
 
 ## 13. Team

@@ -328,7 +328,7 @@ The full technical specification lives in **`techstack.md`**. This section is th
 | LightGBM | Strong on tabular data, handles missing sensor values, gives ranges, trains in seconds |
 | Two workers, no message queue | Postgres alone passes signals; fewer things to break on demo day |
 | Docker Compose | Same setup on the server and the laptop backup |
-| Cloudflare Tunnel | Secure public address for ElevenLabs to reach our API |
+| Caddy | Automatic HTTPS in front of the app on our Hetzner server, so ElevenLabs can reach our API |
 | For an operator | No new sensors or hardware; reads data they already store, read-only |
 
 ---
@@ -478,7 +478,7 @@ If the pitch is running long, skip the click: a **planted fault** in the scenari
 | Person | Owns |
 |---|---|
 | **Olise: ML engine** | Training with cross-fitting, data quality checks, live prediction with ranges, explanations, scheduler, simulation, self-tuning, feedback logic, headline number, demo scenario |
-| **Ebube: backend** | Database, historian simulator, FastAPI backend (including voice tool endpoints and webhooks), live updates, call guardrails and call state, Docker, tunnel and server deployment, laptop fallback |
+| **Ebube: backend** | Database, historian simulator, FastAPI backend (including voice tool endpoints and webhooks), live updates, call guardrails and call state, Docker, Caddy and server deployment, laptop fallback |
 | **David: dashboard, voice pipeline, pitch** | Manager dashboard (fleet, Impact tab, decision log, Test mode, roster, work orders), technician phone page, ElevenLabs agent and LLM test, French call, simulate-call fallback, architecture diagram, pitch deck and script, Q&A, GitHub submission, screenshots, backup video |
 
 Per-person guides for builders and their coding agents are in `docs/delegation/`.

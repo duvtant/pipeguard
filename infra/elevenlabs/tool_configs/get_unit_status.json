@@ -1,0 +1,35 @@
+{
+  "name": "get_unit_status",
+  "type": "webhook",
+  "description": "Use ONLY if the technician asks about the unit's current status or plan. Returns a short spoken summary. Do not call it otherwise.",
+  "api_schema": {
+    "method": "POST",
+    "url": "https://{{system__env_api_host}}/api/voice/tools/unit-status",
+    "request_headers": {
+      "Content-Type": "application/json",
+      "Authorization": {
+        "secret_id": "nJXCAQXdMQPBMKVITm5F"
+      }
+    },
+    "request_body_schema": {
+      "type": "object",
+      "description": "Request body for get_unit_status",
+      "properties": {
+        "unit_id": {
+          "type": "string",
+          "dynamic_variable": "unit_id"
+        }
+      },
+      "required": [
+        "unit_id"
+      ]
+    }
+  },
+  "response_timeout_secs": 10,
+  "disable_interruptions": false,
+  "force_pre_tool_speech": false,
+  "assignments": [],
+  "dynamic_variables": {
+    "dynamic_variable_placeholders": {}
+  }
+}

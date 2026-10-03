@@ -1,14 +1,18 @@
-import path from 'node:path'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 // Dev: the browser talks to Vite, Vite proxies /api to the FastAPI container.
 // Prod: nginx serves the build and proxies /api (see infra/nginx/default.conf).
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  resolve: { alias: { '@': path.resolve(import.meta.dirname, './src') } },
+  resolve: { alias: { '@': new URL('./src', import.meta.url).pathname } },
   server: {
     proxy: { '/api': { target: process.env.VITE_DEV_API ?? 'http://localhost:8000', changeOrigin: true } },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.test.{ts,tsx}'],
   },
 })

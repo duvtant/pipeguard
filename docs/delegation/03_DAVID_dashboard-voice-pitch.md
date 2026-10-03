@@ -13,7 +13,7 @@ Repo: https://github.com/duvtant/pipeguard. Branches: `david/...`. Public URL: `
 
 | # | Deliverable | Needed by | Who is waiting |
 |---|---|---|---|
-| 0 | Link the local folder to the GitHub repo and push `docs/`; confirm `blunelabs.com` is on Cloudflare DNS; chase the Option A approval | first 30 min (approval: tonight 11:59 PM) | Ebube (tunnel), everyone |
+| 0 | Link the local folder to the GitHub repo and push `docs/`; point `pipeguard.blunelabs.com` at the Hetzner server (A record at Porkbun); chase the Option A approval | first 30 min (approval: tonight 11:59 PM) | Ebube (server), everyone |
 | 1 | ElevenLabs agent created, answers a test call (English, then French) | first 90 min | Everyone |
 | 2 | Vite app skeleton, routes, theme, typed API client; **Fleet page on fixtures** | first 90 min | You (and the demo) |
 | 3 | Fleet page on live data; `/field` page rings and connects | Sat 12 PM checkpoint | Everyone |
@@ -21,7 +21,7 @@ Repo: https://github.com/duvtant/pipeguard. Branches: `david/...`. Public URL: `
 | 5 | LLM test (`techstack.md` section 12.10) and the chosen model written down | Sat afternoon | The agent |
 | 6 | Test mode, roster, work orders, recorded call (`infra/recorded_call.json`) | Sat afternoon | Ebube (simulate-call) |
 | 7 | Draft deck and script | Sat 7 PM (freeze) | Rehearsal |
-| 8 | Agent config frozen and exported (`infra/elevenlabs/agent_config.json`) | Sat 7 PM | Ebube (backup agent) |
+| 8 | Agent config frozen and exported (`infra/elevenlabs/`, via `elevenlabs agents pull`) | Sat 7 PM | Ebube (backup environment) |
 | 9 | Full demo run with a real call, ElevenLabs usage check | Sat night | Everyone |
 | 10 | Rehearsals, backup video, screenshots, README | Sun 8 to 10 AM | Submission |
 | 11 | **GitHub Issue submitted** | **Sun 11:00 AM** (hard stop 12:00 PM) | |
@@ -45,8 +45,8 @@ You do not edit `api/`, `simulator/`, `core/` or `ml/`. If the dashboard needs s
 ## 3. Part A: the manager dashboard (`web/`)
 
 ### 3.1 Setup
-- React + Vite + TypeScript, Tailwind CSS, shadcn/ui, Recharts, TanStack Query, React Router (`techstack.md` section 13).
-- Current shadcn + Vite recipe: `pnpm create vite@latest` (React + TypeScript), `pnpm add tailwindcss @tailwindcss/vite`, `@import "tailwindcss";` in `src/index.css`, add the `@/*` path alias to `tsconfig.json` and `tsconfig.app.json`, add the Tailwind plugin and alias to `vite.config.ts`, `pnpm add -D @types/node`, then `pnpm dlx shadcn@latest init` and `... add button`. Check the current shadcn docs if a step has changed.
+- React + Vite + TypeScript, Tailwind CSS, Recharts, TanStack Query, React Router (`techstack.md` section 13). No UI component library is required; how it looks is your design decision (see `04_DAVID_phase-plan.md`, Phase 2).
+- Tailwind 4 is wired through `@tailwindcss/vite`, the `@/*` path alias is set in `tsconfig.json` and `tsconfig.app.json`, and `vite.config.ts` already proxies `/api` to the backend.
 - **Typed client:** generate types from the API with `openapi-typescript` against `/openapi.json`. Types then never drift from Ebube's models.
 - **Before the API exists:** Ebube commits fixtures in `api/fixtures/` and serves them with `MOCK_API=1`. Build against those from minute one.
 - Dev: Vite proxies `/api` to the API. Production: same origin through nginx, so `VITE_API_BASE_URL=/api`.
@@ -137,9 +137,9 @@ Runs on a teammate's phone browser during the demo, with headphones. Mobile-firs
 5. **After call:** thank-you screen with the three manual verdict buttons (**Confirmed wear, Looks fine, Part replaced**) as a fallback if the voice feedback did not happen. These call `POST /api/field/{id}/feedback`.
 
 ### 4.2 Starting the session (`@elevenlabs/react`)
-- Wrap the page in `ConversationProvider` and use `useConversation`.
-- Session options: `startSession({ signedUrl, dynamicVariables })`. Because we use a signed URL, the connection is a WebSocket; set `connectionType` explicitly if the library does not infer it. (With `conversationToken` it would be WebRTC.) Test on a real phone to confirm which is more reliable.
-- Overrides (language, first message) are set in the hook options: `useConversation({ overrides: { agent: { language, firstMessage } } })`. The hook options are read when the hook initialises, so **mount a separate `CallSession` component after the answer response arrives** (keyed by `call_request_id`) and build the overrides from that response there. Otherwise the language of the previous call would stick.
+- SDK is `@elevenlabs/react` **1.16**. Wrap the page in `ConversationProvider`; use `useConversationControls()` (`startSession`, `endSession`, `getId`, `setVolume`), `useConversationStatus()` and `useConversationMode()` (speaking indicator). The older all-in-one `useConversation` still exists, but prefer the focused hooks (stable references, fewer re-renders).
+- Session options: `startSession({ signedUrl, dynamicVariables, overrides })`. `signedUrl`, `conversationToken` and `agentId` are **mutually exclusive**. With a signed URL the connection is a WebSocket (`connectionType` can be set explicitly); with `conversationToken` it is WebRTC. Test on a real phone to see which is more reliable. If failing over to the laptop, also pass `environment` (see 5.8).
+- Overrides (language, first message) go **straight into `startSession`** for each call: `startSession({ signedUrl, dynamicVariables, overrides: { agent: { language, firstMessage } } })`. `startSession` takes its options at call time, so no remounting is needed and the previous call's language cannot stick. (The provider also accepts the same options as defaults.)
 - All dynamic variables must be **strings** and **every variable the prompt references must be provided**.
 - Callbacks to use: `onConnect` (post the `conversationId` from `getId()` to the API), `onDisconnect` (post again, show the after-call screen), `onError` (show a friendly message and the manual buttons), `onModeChange` or `isSpeaking` for the indicator.
 - **Never** put `ELEVENLABS_API_KEY` or a permanent agent URL in the browser. The signed URL comes from our server and lasts 15 minutes.
@@ -159,7 +159,7 @@ Runs on a teammate's phone browser during the demo, with headphones. Mobile-firs
 | The agent echoes into the mic in the demo room | **Headphones.** This is the most common live-demo failure |
 | Wrong language | The language comes from the API per technician; show it in the UI so you can see it is `fr` before the French call |
 
-Test on the **real phone over the public HTTPS URL**, not on desktop localhost. HTTPS is required for the microphone, and the tunnel provides it.
+Test on the **real phone over the public HTTPS URL**, not on desktop localhost. HTTPS is required for the microphone, and Caddy provides it.
 
 ---
 
@@ -251,7 +251,7 @@ All four are **server tools** (`POST`, JSON body) to `https://pipeguard.blunelab
 ### 5.8 Backups
 - **Export the agent config** (`GET /v1/convai/agents/{agent_id}`) to `infra/elevenlabs/agent_config.json` with secrets removed, at the 7 PM freeze. If an agent breaks at 3 AM, you can rebuild it in another account from this.
 - **Freeze the agent** at 7 PM. Late "small prompt tweaks" are how demos break.
-- **Second agent for the laptop fallback:** a copy whose tool and webhook URLs point at `pipeguard-backup.blunelabs.com` (Ebube sets that hostname up). Keep both agent ids ready.
+- **Laptop fallback with ElevenLabs environment variables (no second agent):** define a string variable `api_host` with `production = pipeguard.blunelabs.com` and `backup = <a quick-tunnel host, only if you ever run live voice from a laptop>`, and write every tool URL as `https://{{system__env_api_host}}/api/voice/tools/<name>` (the `https://` must come before the variable). Ebube's `answer` endpoint passes `environment=<ELEVENLABS_ENVIRONMENT>` when requesting the signed URL, so failing over is one setting. If the variable cannot be resolved the call falls back to `production`.
 - **Recorded call:** make one clean successful call and save it as `infra/recorded_call.json` (transcript with timings and the tool calls it made). Ebube's `/api/admin/simulate-call` replays it through the same code as a real call. Also keep the audio of that call and a short screen recording as a last-resort clip.
 
 ### 5.9 Voice edge cases to rehearse
@@ -313,7 +313,7 @@ The Overview section 13 has answers for: why not Case 4, not real pipeline data,
 **Safety nets (from the Overview):** reset before every run, server plus laptop, hotspot, a recorded clip of a successful call plus the simulate-call button, a backup demo video, an Impact screenshot on a slide.
 
 ### 6.6 Assets to produce
-- **Architecture diagram:** one image for the deck and the README. Components and flow are in `techstack.md` section 4.2; add a one-line reason per choice (Postgres alone as the message bus, two workers and no queue, read-only, Docker Compose, named tunnel).
+- **Architecture diagram:** one image for the deck and the README. Components and flow are in `techstack.md` section 4.2; add a one-line reason per choice (Postgres alone as the message bus, two workers and no queue, read-only, Docker Compose, Caddy).
 - **Screenshots (2 to 5):** fleet overview, Impact tab, decision log, voice call (phone screen or call UI), unit detail. Capture at 1920 wide, with no secrets or admin tokens visible.
 - **Backup demo video (5 minutes max):** record Saturday night or Sunday 8 to 10 AM, one clean run on the laptop including the real call and the sensor-kill moment. Upload as an unlisted video and keep the link.
 - **README for judges:** what it is, the problem, the architecture diagram, how to run it (`docker compose up`), the data citation, "simulated company" disclosure, ElevenLabs credit, results table, limitations (stand-in data, one operating condition, one failure mode). No secrets.

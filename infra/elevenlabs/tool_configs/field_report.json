@@ -1,0 +1,45 @@
+{
+  "name": "field_report",
+  "type": "webhook",
+  "description": "Use when the technician describes work done or what they found on the unit. Pass their description as the note.",
+  "api_schema": {
+    "method": "POST",
+    "url": "https://{{system__env_api_host}}/api/voice/tools/field-report",
+    "request_headers": {
+      "Content-Type": "application/json",
+      "Authorization": {
+        "secret_id": "nJXCAQXdMQPBMKVITm5F"
+      }
+    },
+    "request_body_schema": {
+      "type": "object",
+      "description": "Request body for field_report",
+      "properties": {
+        "unit_id": {
+          "type": "string",
+          "dynamic_variable": "unit_id"
+        },
+        "technician_id": {
+          "type": "string",
+          "dynamic_variable": "technician_id"
+        },
+        "note": {
+          "type": "string",
+          "description": "What the technician reported, in their own words."
+        }
+      },
+      "required": [
+        "unit_id",
+        "technician_id",
+        "note"
+      ]
+    }
+  },
+  "response_timeout_secs": 10,
+  "disable_interruptions": false,
+  "force_pre_tool_speech": false,
+  "assignments": [],
+  "dynamic_variables": {
+    "dynamic_variable_placeholders": {}
+  }
+}

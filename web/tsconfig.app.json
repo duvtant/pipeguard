@@ -16,7 +16,7 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Path alias used by shadcn/ui: @/components, @/lib */
+    /* Path alias: import from "@/..." instead of long relative paths */
     "paths": { "@/*": ["./src/*"] },
 
     /* Linting */
