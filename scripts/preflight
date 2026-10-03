@@ -8,5 +8,6 @@ FAILED=0
 curl -fsS http://localhost:8000/api/health >/dev/null 2>&1 && ok "api health (local)" || bad "api health (local)"
 [ -n "${PUBLIC_BASE_URL:-}" ] && { curl -fsS "$PUBLIC_BASE_URL/api/health" >/dev/null 2>&1 && ok "public URL reachable" || bad "public URL reachable"; }
 git ls-files --error-unmatch .env >/dev/null 2>&1 && bad ".env is tracked by git" || ok ".env not tracked"
+grep -n "\[FILL" README.md >/dev/null 2>&1 && bad "README.md still has [FILL ...] placeholders ($(grep -c '\[FILL' README.md) lines)" || ok "README has no [FILL] placeholders"
 # TODO (Ebube): clock at day 0, model version, fallback artifacts, ElevenLabs key + agent id, secrets set.
 exit $FAILED

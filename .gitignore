@@ -26,3 +26,6 @@ pgdata/
 
 # NOTE: ml/artifacts/ is committed on purpose (small models + oof_predictions.parquet)
 # so every machine runs the same model. ml/data/ (NASA files) is committed too.
+
+# Hackathon handbook is a private reference, not part of the submission
+docs/*.pdf
