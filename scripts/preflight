@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Preflight (stub, Ebube owns the real version: docs/delegation/02_EBUBE_backend-api.md section 10).
+# Prints green/red for each check. Run before every rehearsal and before the pitch.
+set -u
+ok()  { printf '\033[32mOK\033[0m   %s\n' "$1"; }
+bad() { printf '\033[31mFAIL\033[0m %s\n' "$1"; FAILED=1; }
+FAILED=0
+curl -fsS http://localhost:8000/api/health >/dev/null 2>&1 && ok "api health (local)" || bad "api health (local)"
+[ -n "${PUBLIC_BASE_URL:-}" ] && { curl -fsS "$PUBLIC_BASE_URL/api/health" >/dev/null 2>&1 && ok "public URL reachable" || bad "public URL reachable"; }
+git ls-files --error-unmatch .env >/dev/null 2>&1 && bad ".env is tracked by git" || ok ".env not tracked"
+# TODO (Ebube): clock at day 0, model version, fallback artifacts, ElevenLabs key + agent id, secrets set.
+exit $FAILED

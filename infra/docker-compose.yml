@@ -1,0 +1,83 @@
+# Run from the repo root:  docker compose -f infra/docker-compose.yml up --build
+# (or `make up`). Config comes from ../.env (copy .env.example), every value has a dev default.
+name: pipeguard
+
+x-python: &python
+  build:
+    context: ..
+    dockerfile: infra/Dockerfile.python
+  env_file:
+    - path: ../.env
+      required: false
+  environment:
+    DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://pipeguard:pipeguard@db:5432/pipeguard}
+    MODEL_DIR: /app/ml/artifacts
+    SCENARIO_PATH: /app/infra/scenario.json
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: pipeguard
+      POSTGRES_PASSWORD: pipeguard
+      POSTGRES_DB: pipeguard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pipeguard -d pipeguard"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  api:
+    <<: *python
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000   # ONE worker on purpose (in-process SSE fan-out)
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  engine:
+    <<: *python
+    command: python -m engine.worker
+    volumes:
+      - ../ml/artifacts:/app/ml/artifacts:ro
+
+  simulator:
+    <<: *python
+    command: python -m simulator.worker
+
+  web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+    ports:
+      - "${WEB_PORT:-8088}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Public HTTPS via the named tunnel (pipeguard.blunelabs.com -> http://web:80).
+  # Off by default: `docker compose --profile tunnel up`. NEVER run the same token on two machines at once.
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  pgdata:

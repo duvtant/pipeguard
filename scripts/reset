@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Reset the demo to the seeded scenario (stub, Ebube owns it). Needs ADMIN_TOKEN in the environment.
+set -eu
+curl -fsS -X POST -H "X-Admin-Token: ${ADMIN_TOKEN:?set ADMIN_TOKEN}" "${API_URL:-http://localhost:8000}/api/admin/reset"

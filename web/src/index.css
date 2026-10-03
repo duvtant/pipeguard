@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+/* Status colours: the same everywhere (see docs/delegation/03_DAVID_dashboard-voice-pitch.md 3.3).
+   Never rely on colour alone; every status also gets an icon or label. */
+:root {
+  --status-healthy: #16a34a;
+  --status-watch: #eab308;
+  --status-at-risk: #dc2626;
+  --status-sensor: #6b7280;
+  --status-failed: #111827;
+}

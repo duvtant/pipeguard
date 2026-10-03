@@ -1,0 +1,19 @@
+# One file for api, engine, simulator and ml. Exact versions frozen from the first
+# successful `docker compose build` (Python 3.11 image). A model saved by one lightgbm
+# version must load in the image, so change versions deliberately and rebuild everywhere.
+# Note: pandas 3.x (copy-on-write, string dtype) differs from 2.x. Olise: write against 3.x.
+fastapi==0.142.2          # native fastapi.sse.EventSourceResponse needs 0.135+
+uvicorn[standard]==0.54.0
+sqlmodel==0.0.47
+psycopg[binary]==3.3.6
+pydantic==2.13.5
+pydantic-settings==2.15.0
+httpx==0.28.1
+elevenlabs==2.70.0        # webhook signature verification (webhooks.construct_event)
+dateparser==1.4.3         # simulated-calendar day parsing (EN + FR)
+lightgbm==4.7.0
+scikit-learn==1.9.1
+pandas==3.0.6
+numpy==2.4.6
+pyarrow==25.0.1
+pytest==9.1.1
