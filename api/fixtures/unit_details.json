@@ -1053,96 +1053,8 @@
         "severity": "info",
         "payload": {
           "call_id": 1,
-          "call_request_id": 41,
-          "conversation_id": "conv_mock_0001",
-          "technician_id": 3,
-          "technician_name": "Marc Tremblay",
-          "language": "fr",
-          "sim_day": 31,
-          "duration_secs": 38,
-          "received_via": "webhook",
-          "summary_en": "Marc cannot service EDS-07 before Friday. The plan moved EDS-07 to day 32.",
-          "data_collection": {
-            "available_day": "vendredi",
-            "verdict": "",
-            "unit_mentioned": "EDS-07",
-            "english_summary": "Marc cannot service EDS-07 before Friday. The plan moved EDS-07 to day 32."
-          },
-          "transcript": [
-            {
-              "role": "agent",
-              "message": "Bonjour Marc, ici PipeGuard pour Prairie Gas. L'unité EDS-07 à Edson a entre 14 et 35 jours de vie utile. Pouvez-vous l'entretenir d'ici jeudi?",
-              "time_in_call_secs": 0
-            },
-            {
-              "role": "user",
-              "message": "Pas avant vendredi.",
-              "time_in_call_secs": 12
-            },
-            {
-              "role": "agent",
-              "message": "Donc vendredi, c'est bien ça?",
-              "time_in_call_secs": 15
-            },
-            {
-              "role": "user",
-              "message": "Oui, vendredi.",
-              "time_in_call_secs": 18
-            },
-            {
-              "role": "agent",
-              "message": "C'est noté. EDS-07 passe à vendredi. Merci Marc.",
-              "time_in_call_secs": 21
-            }
-          ]
+          "call_request_id": 41
         }
-      }
-    ],
-    "calls": [
-      {
-        "call_id": 1,
-        "call_request_id": 41,
-        "conversation_id": "conv_mock_0001",
-        "technician_id": 3,
-        "technician_name": "Marc Tremblay",
-        "language": "fr",
-        "sim_day": 31,
-        "duration_secs": 38,
-        "received_via": "webhook",
-        "summary_en": "Marc cannot service EDS-07 before Friday. The plan moved EDS-07 to day 32.",
-        "data_collection": {
-          "available_day": "vendredi",
-          "verdict": "",
-          "unit_mentioned": "EDS-07",
-          "english_summary": "Marc cannot service EDS-07 before Friday. The plan moved EDS-07 to day 32."
-        },
-        "transcript": [
-          {
-            "role": "agent",
-            "message": "Bonjour Marc, ici PipeGuard pour Prairie Gas. L'unité EDS-07 à Edson a entre 14 et 35 jours de vie utile. Pouvez-vous l'entretenir d'ici jeudi?",
-            "time_in_call_secs": 0
-          },
-          {
-            "role": "user",
-            "message": "Pas avant vendredi.",
-            "time_in_call_secs": 12
-          },
-          {
-            "role": "agent",
-            "message": "Donc vendredi, c'est bien ça?",
-            "time_in_call_secs": 15
-          },
-          {
-            "role": "user",
-            "message": "Oui, vendredi.",
-            "time_in_call_secs": 18
-          },
-          {
-            "role": "agent",
-            "message": "C'est noté. EDS-07 passe à vendredi. Merci Marc.",
-            "time_in_call_secs": 21
-          }
-        ]
       }
     ],
     "quality_flags": []
@@ -2136,7 +2048,6 @@
         "payload": {}
       }
     ],
-    "calls": [],
     "quality_flags": []
   },
   "WHT-17": {
@@ -3117,7 +3028,6 @@
       }
     ],
     "events": [],
-    "calls": [],
     "quality_flags": []
   },
   "GPR-02": {
@@ -4098,7 +4008,6 @@
       }
     ],
     "events": [],
-    "calls": [],
     "quality_flags": []
   },
   "WHT-03": {
@@ -5093,15 +5002,14 @@
         }
       }
     ],
-    "calls": [],
     "quality_flags": [
       {
+        "id": 2,
         "unit_id": "WHT-03",
         "sensor": "s13",
         "flag_type": "sensor_offline",
         "sim_day": 30,
-        "resolved_day": null,
-        "detail": "Corrected fan speed stopped reporting"
+        "resolved_day": null
       }
     ]
   },
@@ -6094,7 +6002,6 @@
         "payload": {}
       }
     ],
-    "calls": [],
     "quality_flags": []
   },
   "EDS-12": {
@@ -7075,7 +6982,6 @@
       }
     ],
     "events": [],
-    "calls": [],
     "quality_flags": []
   },
   "HIN-18": {
@@ -8056,7 +7962,6 @@
       }
     ],
     "events": [],
-    "calls": [],
     "quality_flags": []
   },
   "WHT-09": {
@@ -9050,7 +8955,6 @@
         }
       }
     ],
-    "calls": [],
     "quality_flags": []
   },
   "DRH-09": {
@@ -10031,7 +9935,6 @@
       }
     ],
     "events": [],
-    "calls": [],
     "quality_flags": []
   },
   "DRH-15": {
@@ -11012,7 +10915,6 @@
       }
     ],
     "events": [],
-    "calls": [],
     "quality_flags": []
   },
   "HIN-12": {
@@ -11452,46 +11354,6 @@
           {
             "sim_day": 21,
             "value": 2388.292
-          },
-          {
-            "sim_day": 22,
-            "value": null
-          },
-          {
-            "sim_day": 23,
-            "value": null
-          },
-          {
-            "sim_day": 24,
-            "value": null
-          },
-          {
-            "sim_day": 25,
-            "value": null
-          },
-          {
-            "sim_day": 26,
-            "value": null
-          },
-          {
-            "sim_day": 27,
-            "value": null
-          },
-          {
-            "sim_day": 28,
-            "value": null
-          },
-          {
-            "sim_day": 29,
-            "value": null
-          },
-          {
-            "sim_day": 30,
-            "value": null
-          },
-          {
-            "sim_day": 31,
-            "value": null
           }
         ]
       }
@@ -11511,15 +11373,14 @@
         }
       }
     ],
-    "calls": [],
     "quality_flags": [
       {
+        "id": 1,
         "unit_id": "HIN-12",
         "sensor": "s8",
         "flag_type": "sensor_offline",
         "sim_day": 22,
-        "resolved_day": null,
-        "detail": "Fan speed stopped reporting"
+        "resolved_day": null
       }
     ]
   },
@@ -11769,7 +11630,6 @@
         "payload": {}
       }
     ],
-    "calls": [],
     "quality_flags": []
   },
   "EDS-01": {
@@ -12007,7 +11867,6 @@
     ],
     "sensors": [],
     "events": [],
-    "calls": [],
     "quality_flags": []
   }
 }

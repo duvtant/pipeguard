@@ -1,16 +1,19 @@
 """FastAPI app. With MOCK_API=1 it serves api/fixtures/*.json from memory and needs no database,
-updated to  build the dashboard and the phone page before the real engine exists.
-Real routers (api/routers/*) get included in the non-mock branch as they're built.
+so David can build the dashboard and the phone page before the real engine exists.
+Response shapes follow web/src/lib/types.ts. Real routers (api/routers/*) get included in the
+non-mock branch as they're built.
 """
 import asyncio
+import csv
 import hmac
+import io
 import json
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
 from core.config import get_settings
@@ -27,7 +30,7 @@ def load(name: str):
 @app.get("/api/health")
 def health():
     # Real checks (DB, simulator and engine tick age) come with the real API.
-    return {"ok": True, "mock_api": settings.mock_api, "model_version": "v1",
+    return {"status": "ok", "ok": True, "mock_api": settings.mock_api, "model_version": "v1",
             "data_source": {"live": 100, "fallback": 0}}
 
 
@@ -53,12 +56,12 @@ if settings.mock_api:
                    "spike": "is giving spiking values", "out_of_range": "is reading an impossible value"}
     VERDICTS = {"confirmed_wear", "looks_fine", "part_replaced"}
 
-    TECHS = {t["id"]: t for t in load("technicians.json")["technicians"]}
+    TECHS = {t["id"]: t for t in load("technicians.json")}  # plain array on disk
     DETAILS = load("unit_details.json")
 
-    ids = {"event": 814, "call": 42, "fault": 3}  # never reset, so SSE ids only go up
-    connected: dict[int, int] = {}                # technician id -> open /field streams
-    S: dict = {}                                  # all mutable mock state, rebuilt by init_state()
+    ids = {"event": 814, "call": 42, "fault": 3, "call_record": 2}  # never reset, so ids only go up
+    connected: dict[int, int] = {}                                    # technician id -> open /field streams
+    S: dict = {}                                                      # all mutable mock state, rebuilt by init_state()
 
     def day_date(day: int) -> date:
         return CALENDAR_START + timedelta(days=day)
@@ -89,9 +92,9 @@ if settings.mock_api:
         S["units"][uid] = u
 
     def flags_for(uid: str):
-        return [{"unit_id": uid, "sensor": f["sensor"], "flag_type": FAULT_FLAG[f["type"]],
-                 "sim_day": f["start_day"], "resolved_day": f["end_day"],
-                 "detail": f"{LABEL[f['sensor']]} sensor {FAULT_WORDS[f['type']]}"}
+        # QualityFlag per types.ts: the id is the fault id.
+        return [{"id": f["id"], "unit_id": uid, "sensor": f["sensor"], "flag_type": FAULT_FLAG[f["type"]],
+                 "sim_day": f["start_day"], "resolved_day": f["end_day"]}
                 for f in S["faults"] if f["unit_id"] == uid]
 
     def init_state():
@@ -108,9 +111,10 @@ if settings.mock_api:
             clock={"sim_day": 31, "status": "paused", "speed_seconds_per_day": 1.0},
             base={u["unit_id"]: u for u in base},
             units={},
-            plan=load("plan.json"),
-            events=load("events.json")["events"],
-            calls={},
+            plan=load("plan.json"),                                     # plain array of plan items
+            events=load("events.json"),                                 # plain array of events
+            calls={},                                                   # call REQUESTS (ringing, answered...)
+            call_records={c["id"]: c for c in load("calls.json")},      # finished calls (CallRecord)
             faults=[  # planted faults, same as the fixtures
                 {"id": 1, "unit_id": "HIN-12", "sensor": "s8", "type": "dead", "start_day": 22, "end_day": None, "source": "planted"},
                 {"id": 2, "unit_id": "WHT-03", "sensor": "s13", "type": "dead", "start_day": 30, "end_day": None, "source": "planted"},
@@ -141,24 +145,44 @@ if settings.mock_api:
     def unit_detail(unit_id: str):
         if unit_id not in S["units"]:
             raise HTTPException(404, "unknown unit")
-        detail = DETAILS.get(unit_id, {"history": [], "sensors": [], "calls": []})
-        # Live fleet fields, events and flags override the static fixture.
+        detail = DETAILS.get(unit_id, {"history": [], "sensors": []})
+        # Live fleet fields, events, calls and flags override the static fixture.
         return {**detail, **S["units"][unit_id],
                 "events": [e for e in S["events"] if e["unit_id"] == unit_id],
+                "calls": [c for c in S["call_records"].values() if c["unit_id"] == unit_id],
                 "quality_flags": flags_for(unit_id)}
+
+    @app.get("/api/calls/{call_id}")
+    def get_call(call_id: int):
+        c = S["call_records"].get(call_id)
+        if not c:
+            raise HTTPException(404, "unknown call")
+        return c
 
     @app.get("/api/plan")
     def plan():
-        return S["plan"]
+        return S["plan"]  # plain array
 
     @app.get("/api/events")
     def events(after_id: int = 0):
-        # Polling fallback for the SSE stream: same data, filtered by id.
-        return {"events": [e for e in S["events"] if e["event_id"] > after_id]}
+        # Polling fallback for the SSE stream: same data, filtered by id. Plain array.
+        return [e for e in S["events"] if e["event_id"] > after_id]
 
     @app.get("/api/technicians")
     def technicians():
-        return {"technicians": [{**t, "online": connected.get(t["id"], 0) > 0} for t in TECHS.values()]}
+        return [{**t, "online": connected.get(t["id"], 0) > 0} for t in TECHS.values()]  # plain array
+
+    @app.get("/api/work-orders.csv")
+    def work_orders():
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(["date", "station", "unit", "technician", "expected_saving", "reason"])
+        for p in S["plan"]:
+            w.writerow([p["planned_date"], p["station_code"], p["unit_id"], p["technician_name"],
+                        p["expected_saving"], p["reason"]])
+        # BOM so Excel opens the UTF-8 file cleanly.
+        return Response("\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",
+                        headers={"Content-Disposition": f'attachment; filename="work_orders_day_{S["clock"]["sim_day"]}.csv"'})
 
     # Local request models. Switch to core.contracts once Olise's file is merged to main.
     class SimBody(BaseModel):
@@ -183,6 +207,7 @@ if settings.mock_api:
 
     @app.get("/api/impact")
     def impact():
+        # David's handlers.ts still defines it, so keep it. Dashboard should use POST /api/simulate.
         return load("simulate.json")
 
     class ClockBody(BaseModel):
@@ -209,7 +234,8 @@ if settings.mock_api:
 
     def sse(e: dict) -> str:
         # One SSE frame. The id lets the browser resume with Last-Event-ID.
-        return f"id: {e['event_id']}\nevent: {e['type']}\ndata: {json.dumps(e)}\n\n"
+        # No "event:" name, so one onmessage handler receives every event. The type is inside the JSON.
+        return f"id: {e['event_id']}\ndata: {json.dumps(e)}\n\n"
 
     @app.get("/api/stream")
     async def stream(request: Request):
@@ -276,9 +302,8 @@ if settings.mock_api:
 
     # ---------------------------------------------------------------- technician (/field) page
     def tech_for_slug(slug: str) -> dict:
-        # Mock slugs are t-mock-<id>. Real ones are random.
         for t in TECHS.values():
-            if slug == f"t-mock-{t['id']}":
+            if slug == t["field_page_id"]:
                 return t
         raise HTTPException(404, "unknown technician page")
 
@@ -301,6 +326,7 @@ if settings.mock_api:
                         if (cr["technician_id"] == tech["id"] and cr["state"] == "ringing"
                                 and cr["call_request_id"] not in sent):
                             sent.add(cr["call_request_id"])
+                            # Named "ring" event on purpose: the phone page uses addEventListener('ring', ...).
                             yield f"event: ring\ndata: {json.dumps(ring_event(cr))}\n\n"
                     ticks += 1
                     if ticks % 15 == 0:
@@ -379,7 +405,7 @@ if settings.mock_api:
 
     @app.get("/api/testmode/faults", dependencies=[Depends(require_admin)])
     def list_faults():
-        return {"faults": [f for f in S["faults"] if f["end_day"] is None]}
+        return [f for f in S["faults"] if f["end_day"] is None]  # plain array, open faults only
 
     @app.post("/api/testmode/faults", dependencies=[Depends(require_admin)])
     def add_fault(body: FaultBody):
@@ -409,12 +435,16 @@ if settings.mock_api:
         if f["end_day"] is None:
             f["end_day"] = S["clock"]["sim_day"]
             refresh(f["unit_id"])
-        return {"ok": True}
+        return f  # types.ts Fault
 
     @app.post("/api/admin/reset", dependencies=[Depends(require_admin)])
     def admin_reset():
         init_state()
         return {"ok": True}
+
+    @app.post("/api/admin/tune", dependencies=[Depends(require_admin)])
+    def admin_tune():
+        return {"threshold": 0.4, "horizon_days": 14}  # mock: real one re-runs ml/tune
 
     class SimCallBody(BaseModel):
         unit_id: str = "GPR-02"
@@ -425,14 +455,14 @@ if settings.mock_api:
     @app.post("/api/admin/simulate-call", dependencies=[Depends(require_admin)])
     def simulate_call(body: SimCallBody = SimCallBody()):
         tech = TECHS.get(body.technician_id)
-        item = next((i for i in S["plan"]["items"] if i["unit_id"] == body.unit_id), None)
         if body.unit_id not in S["units"] or not tech:
             raise HTTPException(422, "unknown unit or technician")
+        item = next((i for i in S["plan"] if i["unit_id"] == body.unit_id), None)
+        if not body.ring and not item:
+            raise HTTPException(422, "unit has no planned service to move")
         cr = start_call(body.unit_id, tech)
         if body.ring:
-            return {"ok": True, "call_request_id": cr["call_request_id"], "field_page": f"/field/t-mock-{tech['id']}"}
-        if not item:
-            raise HTTPException(422, "unit has no planned service to move")
+            return {"ok": True, "call_request_id": cr["call_request_id"], "field_page": f"/field/{tech['field_page_id']}"}
         # Full recorded flow with no phone. The real one replays recorded_call.json through the same code as a live call.
         uid, old, day = body.unit_id, item["planned_day"], body.earliest_day
         cr["state"] = "done"
@@ -440,22 +470,28 @@ if settings.mock_api:
         add_event("constraint_added", uid, "Constraint added",
                   f"{tech['name']} cannot service {uid} before day {day} ({weekday(day)}).", payload={"earliest_day": day})
         item["planned_day"], item["planned_date"] = day, day_date(day).isoformat()
+        S["plan"].sort(key=lambda i: (i["planned_day"], i["unit_id"]))
         S["base"][uid]["next_service_day"] = day
         refresh(uid)
         add_event("plan_changed", uid, "Plan changed",
                   f"{uid} moved to day {day} (technician unavailable before {weekday(day)}).",
                   payload={"changes": [{"kind": "moved", "unit_id": uid, "old_day": old, "new_day": day}]})
         summary = f"{tech['name']} cannot service {uid} before {weekday(day)}. The plan moved {uid} to day {day}."
-        add_event("call_summary", uid, "Call summary", summary, payload={
-            "call_request_id": cr["call_request_id"], "technician_id": tech["id"], "technician_name": tech["name"],
-            "language": tech["language"], "sim_day": S["clock"]["sim_day"], "duration_secs": 24,
-            "received_via": "webhook", "summary_en": summary,
-            "data_collection": {"available_day": weekday(day), "verdict": "", "unit_mentioned": uid, "english_summary": summary},
+        rec_id = ids["call_record"]
+        ids["call_record"] += 1
+        S["call_records"][rec_id] = {  # CallRecord (types.ts). received_via "simulated" marks it as a replay
+            "id": rec_id, "call_request_id": cr["call_request_id"], "unit_id": uid, "technician_id": tech["id"],
+            "technician_name": tech["name"], "conversation_id": f"conv_sim_{rec_id:04d}", "language": "en",
             "transcript": [
                 {"role": "agent", "message": f"Hi {tech['name'].split()[0]}, this is PipeGuard. Unit {uid} needs attention. Can your crew service it by Thursday?", "time_in_call_secs": 0},
                 {"role": "user", "message": f"Not before {weekday(day)}.", "time_in_call_secs": 9},
                 {"role": "agent", "message": f"So {weekday(day)}, correct?", "time_in_call_secs": 12},
                 {"role": "user", "message": "Yes.", "time_in_call_secs": 15},
                 {"role": "agent", "message": f"Got it. {uid} moves to {weekday(day)}.", "time_in_call_secs": 17},
-            ]})
+            ],
+            "summary": summary, "summary_en": summary, "duration_secs": 24, "received_via": "simulated",
+            "data_collection": {"available_day": weekday(day), "verdict": "", "unit_mentioned": uid},
+        }
+        add_event("call_summary", uid, "Call summary", summary,
+                  payload={"call_id": rec_id, "call_request_id": cr["call_request_id"]})
         return {"ok": True, "plan_changed": {"unit_id": uid, "old_day": old, "new_day": day}}

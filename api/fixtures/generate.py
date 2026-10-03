@@ -1,6 +1,6 @@
 """Builds the mock API fixtures (api/fixtures/*.json). Mock data only.
 
-Shapes follow docs/delegation/00_TEAM_CONTRACT.md 4.3 and Olise's core/contracts.py.
+Shapes follow web/src/lib/types.ts (David) and docs/delegation/00_TEAM_CONTRACT.md 4.3.
 Deterministic: run it twice, get identical files.
 Run from the repo root:  python api/fixtures/generate.py
 """
@@ -58,6 +58,7 @@ WATCH = {
 }
 SENSOR_ISSUE = {"HIN-12": "s8", "WHT-03": "s13"}  # unit -> offline sensor
 ISSUE_DAY = {"HIN-12": 22, "WHT-03": 30}          # day the sensor went dead
+FAULT_ID = {"HIN-12": 1, "WHT-03": 2}             # same ids as the planted faults in api/main.py
 NEEDS_DECISION = {"EDS-14"}
 FAILED = "GPR-15"
 
@@ -122,7 +123,7 @@ dump("fleet.json", {
     "units": units,
 })
 
-# --- Roster. field_page_id is NOT exposed: the slug in the /field URL is its only protection. ---
+# --- Roster (plain array). Mock slugs are t-mock-<id>. Real ones are random. ---
 ROSTER = [  # id, name, station, shift, language, is_backup
     (1, "Sam Whitford", "EDS", "day", "en", False), (2, "Priya Nair", "EDS", "night", "en", True),
     (3, "Marc Tremblay", "EDS", "day", "fr", False), (4, "Jordan Cardinal", "HIN", "day", "en", False),
@@ -132,11 +133,13 @@ ROSTER = [  # id, name, station, shift, language, is_backup
     (11, "Elena Petrova", "DRH", "day", "en", False), (12, "Omar Haddad", "DRH", "night", "en", True),
 ]
 techs = [{"id": t[0], "name": t[1], "station_code": t[2], "station": STATIONS[t[2]], "shift": t[3],
-          "language": t[4], "is_backup": t[5], "online": t[0] in (1, 3)} for t in ROSTER]
+          "language": t[4], "is_backup": t[5], "online": t[0] in (1, 3),
+          "field_page_id": f"t-mock-{t[0]}"} for t in ROSTER]
 tech_by_id = {t["id"]: t for t in techs}
-dump("technicians.json", {"technicians": techs})
+dump("technicians.json", techs)
 
-# --- Plan: every at-risk unit that has a service day. Primary day-shift tech per station. ---
+# --- Plan (plain array): every at-risk unit that has a service day. Primary day-shift tech per station. ---
+# EDS-14 has no slot, so it is not listed here. It carries needs_manager_decision on its fleet record.
 PRIMARY = {"EDS": 3, "HIN": 4, "WHT": 6, "GPR": 8, "DRH": 11}
 items = []
 for u in sorted(units, key=lambda x: (x["next_service_day"] or 999, x["unit_id"])):
@@ -150,20 +153,12 @@ for u in sorted(units, key=lambda x: (x["next_service_day"] or 999, x["unit_id"]
             "expected_saving": round(u["p_fail"] * 200_000 - 20_000),  # p_fail * breakdown cost - service cost
             "reason": u["reason"], "state": "planned",
         })
-dump("plan.json", {
-    "sim_day": SIM_DAY, "items": items,
-    "needs_manager_decision": [{"unit_id": "EDS-14", "station_code": "EDS",
-                                "reason": "No crew slot opens before this unit may fail (6 to 16 days left)."}],
-})
+dump("plan.json", items)
 
-# --- One French call, used in the event log and EDS-07's detail. ---
+# --- One French call as a CallRecord (types.ts). summary is in the call's language, summary_en in English. ---
 CALL = {
-    "call_id": 1, "call_request_id": 41, "conversation_id": "conv_mock_0001",
-    "technician_id": 3, "technician_name": "Marc Tremblay", "language": "fr",
-    "sim_day": 31, "duration_secs": 38, "received_via": "webhook",
-    "summary_en": "Marc cannot service EDS-07 before Friday. The plan moved EDS-07 to day 32.",
-    "data_collection": {"available_day": "vendredi", "verdict": "", "unit_mentioned": "EDS-07",
-                        "english_summary": "Marc cannot service EDS-07 before Friday. The plan moved EDS-07 to day 32."},
+    "id": 1, "call_request_id": 41, "unit_id": "EDS-07", "technician_id": 3,
+    "technician_name": "Marc Tremblay", "conversation_id": "conv_mock_0001", "language": "fr",
     "transcript": [
         {"role": "agent", "message": "Bonjour Marc, ici PipeGuard pour Prairie Gas. L'unité EDS-07 à Edson a entre 14 et 35 jours de vie utile. Pouvez-vous l'entretenir d'ici jeudi?", "time_in_call_secs": 0},
         {"role": "user", "message": "Pas avant vendredi.", "time_in_call_secs": 12},
@@ -171,7 +166,12 @@ CALL = {
         {"role": "user", "message": "Oui, vendredi.", "time_in_call_secs": 18},
         {"role": "agent", "message": "C'est noté. EDS-07 passe à vendredi. Merci Marc.", "time_in_call_secs": 21},
     ],
+    "summary": "Marc ne peut pas intervenir sur EDS-07 avant vendredi. Le plan a déplacé EDS-07 au jour 32.",
+    "summary_en": "Marc cannot service EDS-07 before Friday. The plan moved EDS-07 to day 32.",
+    "duration_secs": 38, "received_via": "webhook",
+    "data_collection": {"available_day": "vendredi", "verdict": "", "unit_mentioned": "EDS-07"},
 }
+dump("calls.json", [CALL])
 
 
 def ev(eid, day, typ, unit, title, detail, severity="info", payload=None):
@@ -193,21 +193,24 @@ events = [
     ev(811, 31, "constraint_added", "EDS-07", "Constraint added", "Marc Tremblay cannot service EDS-07 before day 32 (Friday).", "info", {"earliest_day": 32}),
     ev(812, 31, "plan_changed", "EDS-07", "Plan changed", "EDS-07 moved to day 32 (technician unavailable before Friday).", "info",
        {"changes": [{"kind": "moved", "unit_id": "EDS-07", "old_day": 31, "new_day": 32}]}),
-    ev(813, 31, "call_summary", "EDS-07", "Call summary", CALL["summary_en"], "info", CALL),
+    # call_id points at GET /api/calls/{id}
+    ev(813, 31, "call_summary", "EDS-07", "Call summary", CALL["summary_en"], "info",
+       {"call_id": CALL["id"], "call_request_id": CALL["call_request_id"]}),
 ]
-dump("events.json", {"events": events})
+dump("events.json", events)  # plain array
 
 
-# --- Unit detail for the interesting units (the API fills in the rest with empty lists). ---
+# --- Unit detail for the interesting units (api/main.py fills in live fields, events, calls and flags). ---
 def series(sensor, rising_days, dead_from=None):
-    """60 days of one sensor. A rising sensor drifts up; a dead one goes null."""
+    """60 days of one sensor. A rising sensor drifts up. A dead one simply stops (types.ts wants numbers, not null)."""
     pts = []
     for k in range(60):
         d = SIM_DAY - 59 + k
+        if dead_from is not None and d >= dead_from:
+            continue  # sensor offline: no reading
         noise = rng.uniform(-1, 1) * BASE[sensor] * 0.0003
         drift = BASE[sensor] * 0.0006 * max(0, d - (SIM_DAY - rising_days))
-        dead = dead_from is not None and d >= dead_from
-        pts.append({"sim_day": d, "value": None if dead else round(BASE[sensor] + noise + drift, 3)})
+        pts.append({"sim_day": d, "value": round(BASE[sensor] + noise + drift, 3)})
     return {"sensor": sensor, "label": LABEL[sensor], "points": pts}
 
 
@@ -229,7 +232,7 @@ def history(u):
 
 
 def plots(uid, u):
-    if uid in SENSOR_ISSUE and not u["top_sensors"]:  # HIN-12: show the dead sensor
+    if uid in SENSOR_ISSUE and not u["top_sensors"]:  # HIN-12: show the sensor that died
         return [series(SENSOR_ISSUE[uid], 0, dead_from=ISSUE_DAY[uid])]
     spec = AT_RISK.get(uid) or WATCH.get(uid)
     return [series(s, spec[5] if n == 0 else 0) for n, s in enumerate(u["top_sensors"])]
@@ -241,27 +244,23 @@ for uid in dict.fromkeys([*AT_RISK, *WATCH, *SENSOR_ISSUE, FAILED, "EDS-01"]):  
     flags = []
     if uid in SENSOR_ISSUE:
         s = SENSOR_ISSUE[uid]
-        flags = [{"unit_id": uid, "sensor": s, "flag_type": "sensor_offline", "sim_day": ISSUE_DAY[uid],
-                  "resolved_day": None, "detail": f"{LABEL[s]} stopped reporting"}]
+        flags = [{"id": FAULT_ID[uid], "unit_id": uid, "sensor": s, "flag_type": "sensor_offline",
+                  "sim_day": ISSUE_DAY[uid], "resolved_day": None}]
     details[uid] = {**u, "history": history(u), "sensors": plots(uid, u),
-                    "events": [e for e in events if e["unit_id"] == uid],
-                    "calls": [CALL] if uid == "EDS-07" else [], "quality_flags": flags}
+                    "events": [e for e in events if e["unit_id"] == uid], "quality_flags": flags}
 dump("unit_details.json", details)
 
 # --- Simulate / impact. PLACEHOLDER numbers that show the shape. They are not results. ---
 dump("simulate.json", {
     "policies": [
-        {"policy": "run_to_failure", "breakdowns": 100, "planned_services": 0, "wasted_services": 0, "crew_days": 0, "total_cost": 20_000_000, "operating_days": 0, "cost_per_operating_day": 0.0},
-        {"policy": "fixed_schedule", "breakdowns": 31, "planned_services": 160, "wasted_services": 84, "crew_days": 160, "total_cost": 9_400_000, "operating_days": 0, "cost_per_operating_day": 0.0},
-        {"policy": "pipeguard", "breakdowns": 6, "planned_services": 109, "wasted_services": 9, "crew_days": 109, "total_cost": 3_380_000, "operating_days": 0, "cost_per_operating_day": 0.0},
+        {"policy": "run_to_failure", "breakdowns": 100, "planned_services": 0, "wasted_services": 0, "crew_days": 0, "total_cost": 20_000_000},
+        {"policy": "fixed_schedule", "breakdowns": 31, "planned_services": 160, "wasted_services": 84, "crew_days": 160, "total_cost": 9_400_000},
+        {"policy": "pipeguard", "breakdowns": 6, "planned_services": 109, "wasted_services": 9, "crew_days": 109, "total_cost": 3_380_000},
     ],
-    "default": {"threshold": 0.5, "horizon_days": 14, "total_cost": 4_100_000, "detected": 84, "actioned": 79, "total": 100, "meets_service_level": False},
-    "tuned": {"threshold": 0.4, "horizon_days": 14, "total_cost": 3_380_000, "detected": 91, "actioned": 88, "total": 100, "meets_service_level": True},
+    "default": {"threshold": 0.5, "horizon_days": 14, "total_cost": 4_100_000},
+    "tuned": {"threshold": 0.4, "horizon_days": 14, "total_cost": 3_380_000},
     "headline": {"detected": 91, "actioned": 88, "total": 100, "lead_days": 14,
-                 "text": "MOCK: PipeGuard would have caught 88 of 100 failures at least 14 days early.",
-                 "false_alarms": 7, "false_alarm_days": 60, "lead_time_p10": 16.0, "lead_time_median": 31.0, "lead_time_p90": 52.0,
-                 "definition": "Detected = at risk at least 14 days before failure. Actioned = also serviced in time."},
+                 "text": "MOCK: PipeGuard would have caught 88 of 100 failures at least 14 days early."},
     "computed_ms": 240,
-    "assumptions": ["MOCK DATA: placeholder numbers, not results. Only the cost sliders change them."],
 })
 print("fixtures written to", OUT)

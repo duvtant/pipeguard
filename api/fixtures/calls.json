@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "call_request_id": 41,
+    "unit_id": "EDS-07",
+    "technician_id": 3,
+    "technician_name": "Marc Tremblay",
+    "conversation_id": "conv_mock_0001",
+    "language": "fr",
+    "transcript": [
+      {
+        "role": "agent",
+        "message": "Bonjour Marc, ici PipeGuard pour Prairie Gas. L'unité EDS-07 à Edson a entre 14 et 35 jours de vie utile. Pouvez-vous l'entretenir d'ici jeudi?",
+        "time_in_call_secs": 0
+      },
+      {
+        "role": "user",
+        "message": "Pas avant vendredi.",
+        "time_in_call_secs": 12
+      },
+      {
+        "role": "agent",
+        "message": "Donc vendredi, c'est bien ça?",
+        "time_in_call_secs": 15
+      },
+      {
+        "role": "user",
+        "message": "Oui, vendredi.",
+        "time_in_call_secs": 18
+      },
+      {
+        "role": "agent",
+        "message": "C'est noté. EDS-07 passe à vendredi. Merci Marc.",
+        "time_in_call_secs": 21
+      }
+    ],
+    "summary": "Marc ne peut pas intervenir sur EDS-07 avant vendredi. Le plan a déplacé EDS-07 au jour 32.",
+    "summary_en": "Marc cannot service EDS-07 before Friday. The plan moved EDS-07 to day 32.",
+    "duration_secs": 38,
+    "received_via": "webhook",
+    "data_collection": {
+      "available_day": "vendredi",
+      "verdict": "",
+      "unit_mentioned": "EDS-07"
+    }
+  }
+]
