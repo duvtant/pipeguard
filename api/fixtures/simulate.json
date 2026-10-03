@@ -1,0 +1,69 @@
+{
+  "policies": [
+    {
+      "policy": "run_to_failure",
+      "breakdowns": 100,
+      "planned_services": 0,
+      "wasted_services": 0,
+      "crew_days": 0,
+      "total_cost": 20000000,
+      "operating_days": 0,
+      "cost_per_operating_day": 0.0
+    },
+    {
+      "policy": "fixed_schedule",
+      "breakdowns": 31,
+      "planned_services": 160,
+      "wasted_services": 84,
+      "crew_days": 160,
+      "total_cost": 9400000,
+      "operating_days": 0,
+      "cost_per_operating_day": 0.0
+    },
+    {
+      "policy": "pipeguard",
+      "breakdowns": 6,
+      "planned_services": 109,
+      "wasted_services": 9,
+      "crew_days": 109,
+      "total_cost": 3380000,
+      "operating_days": 0,
+      "cost_per_operating_day": 0.0
+    }
+  ],
+  "default": {
+    "threshold": 0.5,
+    "horizon_days": 14,
+    "total_cost": 4100000,
+    "detected": 84,
+    "actioned": 79,
+    "total": 100,
+    "meets_service_level": false
+  },
+  "tuned": {
+    "threshold": 0.4,
+    "horizon_days": 14,
+    "total_cost": 3380000,
+    "detected": 91,
+    "actioned": 88,
+    "total": 100,
+    "meets_service_level": true
+  },
+  "headline": {
+    "detected": 91,
+    "actioned": 88,
+    "total": 100,
+    "lead_days": 14,
+    "text": "MOCK: PipeGuard would have caught 88 of 100 failures at least 14 days early.",
+    "false_alarms": 7,
+    "false_alarm_days": 60,
+    "lead_time_p10": 16.0,
+    "lead_time_median": 31.0,
+    "lead_time_p90": 52.0,
+    "definition": "Detected = at risk at least 14 days before failure. Actioned = also serviced in time."
+  },
+  "computed_ms": 240,
+  "assumptions": [
+    "MOCK DATA: placeholder numbers, not results. Only the cost sliders change them."
+  ]
+}

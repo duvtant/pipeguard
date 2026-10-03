@@ -1,0 +1,124 @@
+{
+  "technicians": [
+    {
+      "id": 1,
+      "name": "Sam Whitford",
+      "station_code": "EDS",
+      "station": "Edson",
+      "shift": "day",
+      "language": "en",
+      "is_backup": false,
+      "online": true
+    },
+    {
+      "id": 2,
+      "name": "Priya Nair",
+      "station_code": "EDS",
+      "station": "Edson",
+      "shift": "night",
+      "language": "en",
+      "is_backup": true,
+      "online": false
+    },
+    {
+      "id": 3,
+      "name": "Marc Tremblay",
+      "station_code": "EDS",
+      "station": "Edson",
+      "shift": "day",
+      "language": "fr",
+      "is_backup": false,
+      "online": true
+    },
+    {
+      "id": 4,
+      "name": "Jordan Cardinal",
+      "station_code": "HIN",
+      "station": "Hinton",
+      "shift": "day",
+      "language": "en",
+      "is_backup": false,
+      "online": false
+    },
+    {
+      "id": 5,
+      "name": "Aisha Bello",
+      "station_code": "HIN",
+      "station": "Hinton",
+      "shift": "night",
+      "language": "en",
+      "is_backup": true,
+      "online": false
+    },
+    {
+      "id": 6,
+      "name": "Luc Gagnon",
+      "station_code": "WHT",
+      "station": "Whitecourt",
+      "shift": "day",
+      "language": "fr",
+      "is_backup": false,
+      "online": false
+    },
+    {
+      "id": 7,
+      "name": "Dana Kowalski",
+      "station_code": "WHT",
+      "station": "Whitecourt",
+      "shift": "night",
+      "language": "en",
+      "is_backup": true,
+      "online": false
+    },
+    {
+      "id": 8,
+      "name": "Chris Lavoie",
+      "station_code": "GPR",
+      "station": "Grande Prairie",
+      "shift": "day",
+      "language": "en",
+      "is_backup": false,
+      "online": false
+    },
+    {
+      "id": 9,
+      "name": "Mei Lin Zhao",
+      "station_code": "GPR",
+      "station": "Grande Prairie",
+      "shift": "night",
+      "language": "en",
+      "is_backup": true,
+      "online": false
+    },
+    {
+      "id": 10,
+      "name": "Tom Redcrow",
+      "station_code": "GPR",
+      "station": "Grande Prairie",
+      "shift": "day",
+      "language": "en",
+      "is_backup": false,
+      "online": false
+    },
+    {
+      "id": 11,
+      "name": "Elena Petrova",
+      "station_code": "DRH",
+      "station": "Drumheller",
+      "shift": "day",
+      "language": "en",
+      "is_backup": false,
+      "online": false
+    },
+    {
+      "id": 12,
+      "name": "Omar Haddad",
+      "station_code": "DRH",
+      "station": "Drumheller",
+      "shift": "night",
+      "language": "en",
+      "is_backup": true,
+      "online": false
+    }
+  ]
+}
