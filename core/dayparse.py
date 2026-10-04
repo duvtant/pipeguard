@@ -70,7 +70,8 @@ def resolve_day(text: str, today: int, lang: str = "en") -> DayParse:
     today_wd = day_date(today).weekday()
 
     def ok(day: int) -> DayParse:
-        return DayParse(day) if today <= day <= today + MAX_AHEAD else unclear
+        day = max(day, today)  # a day already gone means today (the earliest the crew can start)
+        return DayParse(day) if day <= today + MAX_AHEAD else unclear
 
     # Relative words. "day after tomorrow" must be checked before "tomorrow".
     if re.search(r"\b(day after tomorrow|apres demain|surlendemain)\b", t):
@@ -86,6 +87,14 @@ def resolve_day(text: str, today: int, lang: str = "en") -> DayParse:
         n = int(m.group(1)) if m.group(1).isdigit() else NUMBERS.get(m.group(1))
         if n:
             return ok(today + n * UNITS_DAYS[m.group(2)])
+
+    # ISO date: 2026-10-20 (checked on the raw text, before dashes are stripped)
+    iso = re.search(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b", text or "")
+    if iso:
+        try:
+            return ok((date(int(iso.group(1)), int(iso.group(2)), int(iso.group(3))) - CALENDAR_START).days)
+        except ValueError:
+            return unclear
 
     # Calendar date: "October 20", "20th of October", "le 20 octobre"
     month_pat = "|".join(sorted(MONTHS, key=len, reverse=True))
@@ -106,16 +115,11 @@ def resolve_day(text: str, today: int, lang: str = "en") -> DayParse:
         wd = WEEKDAYS[toks[wd_idx]]
         delta = (wd - today_wd) % 7
         has_next = bool({"next", "prochain", "prochaine"} & set(toks))
-        has_this = bool({"this", "ce", "cette"} & set(toks))
         after = bool({"after", "apres"} & set(toks[max(0, wd_idx - 2):wd_idx]))
         if has_next:
             # The coming one, unless it falls in this same Monday-to-Sunday week: then the week after.
             delta = 7 if delta == 0 else (delta + 7 if today_wd + delta <= 6 else delta)
-        elif delta == 0 and not has_this:
-            day_txt = weekday_name(today, lang)
-            q = (f"Do you mean today, or next {day_txt}?" if lang == "en"
-                 else f"Vous voulez dire aujourd'hui, ou {day_txt} prochain ?")
-            return DayParse(None, q)
+        # No qualifier: "Friday" is the next Friday on or after today, so on a Friday it means today.
         return ok(today + delta + (1 if after else 0))
 
     # "next week" -> Monday of next week

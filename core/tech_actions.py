@@ -8,9 +8,10 @@ VERDICTS = ("confirmed_wear", "looks_fine", "part_replaced")
 
 
 def record_feedback(s: Session, unit_id: str, technician_id: int, verdict: str, note: str | None = None) -> dict:
-    """Store a verdict. Raises ValueError on a bad unit or verdict. Idempotent per unit, technician and day.
+    """Store a verdict, then let Olise's core.feedback decide whether the alert threshold moves.
 
-    TODO(Olise): threshold and urgency learning (core/feedback.py) is not wired in yet.
+    Raises ValueError on a bad unit or verdict. Idempotent per unit, technician and day. The scheduler's
+    urgency discount for looks_fine is applied by the engine from the same feedback rows.
     """
     if verdict not in VERDICTS:
         raise ValueError("bad verdict")
@@ -32,4 +33,17 @@ def record_feedback(s: Session, unit_id: str, technician_id: int, verdict: str, 
         s.execute(text("UPDATE plan_items SET state = 'done' WHERE unit_id = :u AND state <> 'done'"), {"u": unit_id})
     add_event(s, day, "feedback_received", unit_id, "Feedback received",
               f"Technician verdict: {verdict.replace('_', ' ')}.", payload={"verdict": verdict})
-    return out
+    return _adjust_threshold(s, out["threshold"], day)
+
+
+def _adjust_threshold(s: Session, current: float, day: int) -> dict:
+    from core.contracts import VerdictRecord
+    from core.feedback import process_feedback
+
+    rows = s.execute(text("SELECT id, unit_id, technician_id, verdict, sim_day FROM feedback ORDER BY id")).mappings().all()
+    result = process_feedback([VerdictRecord(**r) for r in rows], current, day)
+    if result.threshold != current:
+        s.execute(text("UPDATE engine_params SET threshold = :t WHERE id = 1"), {"t": result.threshold})
+        add_event(s, day, "threshold_adjusted", None, "Alert threshold adjusted", result.message or "",
+                  payload={"old": current, "new": result.threshold})
+    return {"threshold": result.threshold}

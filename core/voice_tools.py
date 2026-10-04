@@ -20,6 +20,7 @@ log = logging.getLogger(__name__)
 SAY = {
     "en": {
         "unknown_unit": "Sorry, I don't recognise that unit. Can you repeat the unit number?",
+        "no_call": "Sorry, I can't change the plan because I have no active call for that unit. A manager will follow up.",
         "moved": "Got it. {unit} moves to {day}.",
         "also": " {other} also moves to {oday}.",
         "unchanged": "Got it. {unit} is already planned for {day}, so nothing changes.",
@@ -40,6 +41,7 @@ SAY = {
     },
     "fr": {
         "unknown_unit": "Désolé, je ne reconnais pas cette unité. Pouvez-vous répéter le numéro ?",
+        "no_call": "Désolé, je ne peux pas modifier le plan : je n'ai pas d'appel actif pour cette unité. Un responsable vous recontactera.",
         "moved": "C'est noté. {unit} est décalé à {day}.",
         "also": " {other} passe aussi à {oday}.",
         "unchanged": "C'est noté. {unit} est déjà prévu pour {day}, rien ne change.",
@@ -108,12 +110,14 @@ def submit_availability(s: Session, data: dict) -> dict:
     day = parsed.day
     note = (str(data.get("note")) if data.get("note") else None)
 
-    # The tool does not send call_request_id, so use this technician's current call about this unit.
-    cr_id = norm_int(data.get("call_request_id"))
-    if cr_id is None and tech_id is not None:
-        cr_id = s.execute(text("SELECT id FROM call_requests WHERE technician_id = :t AND unit_id = :u "
-                               "AND state IN ('answered', 'done') ORDER BY id DESC LIMIT 1"),
-                          {"t": tech_id, "u": unit_id}).scalar()
+    # The plan only changes on a call the technician actually answered about this unit. The tool does not
+    # send call_request_id, so find it (a call the phone already hung up on, state done, still counts).
+    cr_id = s.execute(text(
+        "SELECT id FROM call_requests WHERE technician_id = :t AND unit_id = :u AND state IN ('answered', 'done') "
+        "AND (CAST(:c AS integer) IS NULL OR id = CAST(:c AS integer)) ORDER BY id DESC LIMIT 1"),
+        {"t": tech_id, "u": unit_id, "c": norm_int(data.get("call_request_id"))}).scalar()
+    if cr_id is None:
+        return {"ok": False, "say": _t(lang, "no_call")}
 
     # Idempotent: the LLM may call this twice. NULLs are distinct in the unique index, so check in code too.
     s.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": f"constraint:{unit_id}"})
@@ -138,7 +142,19 @@ def submit_availability(s: Session, data: dict) -> dict:
         log.exception("replan failed after constraint for %s", unit_id)
         return {"ok": True, "say": _t(lang, "degraded", unit=unit_id, day=dayname), "earliest_day": day}
 
+    if unit_id in result.needs_manager_decision:
+        _manager_alert(s, unit_id, today, day, next((d.reason for d in result.decisions if d.unit_id == unit_id), ""))
     return {"ok": True, "say": _plan_sentence(result, unit_id, lang, day), "earliest_day": day}
+
+
+def _manager_alert(s: Session, unit_id: str, today: int, earliest_day: int, why: str) -> None:
+    """Said out loud to the technician AND shown to the manager. Once per unit and day."""
+    if s.execute(text("SELECT 1 FROM events WHERE type = 'manager_alert' AND unit_id = :u AND sim_day = :d "
+                      "AND payload->>'reason' = 'needs_manager_decision'"), {"u": unit_id, "d": today}).first():
+        return
+    add_event(s, today, "manager_alert", unit_id, "Manager decision needed",
+              why or f"{unit_id} cannot be serviced before it may fail.", "critical",
+              {"reason": "needs_manager_decision", "earliest_day": earliest_day})
 
 
 def _plan_sentence(result, unit_id: str, lang: str, requested_day: int) -> str:

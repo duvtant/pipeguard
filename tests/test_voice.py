@@ -18,6 +18,11 @@ def count(db, sql):
     return db.execute(text(sql)).scalar()
 
 
+def run(db, sql, **p):
+    db.execute(text(sql), p)
+    db.commit()
+
+
 def planned(db, unit):
     return db.execute(text("SELECT planned_day FROM plan_items WHERE unit_id = :u"), {"u": unit}).scalar()
 
@@ -29,7 +34,9 @@ def plan(db):
     predict(db, "EDS-02", 0.90)
     predict(db, "EDS-03", 0.85)
     replan(db, emit=False)
-    db.commit()
+    # Calls the technicians have answered: the plan only changes during one of these.
+    run(db, "INSERT INTO call_requests (unit_id, technician_id, sim_day, state, attempt) VALUES "
+            "('EDS-01', 1, 10, 'answered', 1), ('EDS-01', 2, 10, 'answered', 1), ('EDS-04', 1, 10, 'answered', 1)")
     return db
 
 
@@ -81,11 +88,7 @@ def test_same_call_twice_changes_nothing_twice(plan):
 
 
 def test_constraint_is_linked_to_the_answered_call(plan):
-    alerts.create_call_requests(plan)  # rings the technicians for the three at-risk units
-    plan.commit()
-    cid = count(plan, "SELECT id FROM call_requests WHERE unit_id = 'EDS-01'")
-    alerts.answer_call(plan, cid)
-    plan.commit()
+    cid = count(plan, "SELECT id FROM call_requests WHERE unit_id = 'EDS-01' AND technician_id = 1")
     avail("Friday")
     assert count(plan, "SELECT call_request_id FROM constraints") == cid
 
@@ -103,7 +106,6 @@ def test_unit_and_technician_ids_from_the_llm_are_cleaned_up(plan):
 def test_unclear_day_asks_again_and_saves_nothing(plan):
     r = avail("whenever").json()
     assert r["ok"] is False and "Which day" in r["say"]
-    assert avail("Thursday").json()["say"] == "Do you mean today, or next Thursday?"
     assert avail("peut-être", tech=2).json()["say"].startswith("Désolé")
     assert count(plan, "SELECT count(*) FROM constraints") == 0
 
@@ -112,6 +114,10 @@ def test_too_late_for_the_unit_goes_to_a_manager(plan):
     r = avail("in 9 days").json()  # past this week's plan window
     assert r["ok"] is True and "flagged it for a manager" in r["say"]
     assert planned(plan, "EDS-01") is None
+    alert = plan.execute(text("SELECT severity, title, payload FROM events WHERE type = 'manager_alert'")).one()
+    assert alert[0] == "critical" and alert[1] == "Manager decision needed" and alert[2]["reason"] == "needs_manager_decision"
+    avail("in 9 days")  # the agent repeats itself: still one alert for the manager
+    assert count(plan, "SELECT count(*) FROM events WHERE type = 'manager_alert'") == 1
 
 
 def test_unit_not_in_the_plan_is_just_noted(plan):
@@ -178,3 +184,44 @@ def test_tool_secret_is_enforced_only_when_configured(plan, monkeypatch):
     assert client.post(f"{URL}/unit-status", json=body).status_code == 401
     assert client.post(f"{URL}/unit-status", json=body, headers={"Authorization": "Bearer nope"}).status_code == 401
     assert client.post(f"{URL}/unit-status", json=body, headers={"Authorization": "Bearer s3cret"}).status_code == 200
+
+
+# ---------------------------------------------------------------- the rules from guide 8.5
+def test_no_plan_change_without_an_answered_call_about_that_unit(plan):
+    for unit, tech in (("EDS-02", 1), ("EDS-01", 3), ("EDS-01", None)):   # no call / someone else's call / no technician
+        r = avail("Friday", unit=unit, tech=tech).json()
+        assert r["ok"] is False and "no active call" in r["say"], (unit, tech)
+    assert avail("vendredi", unit="EDS-02", tech=2).json()["say"].startswith("Désolé, je ne peux pas modifier le plan")
+    assert count(plan, "SELECT count(*) FROM constraints") == 0 and planned(plan, "EDS-01") == 10
+
+
+def test_a_call_the_phone_already_hung_up_on_still_counts(plan):
+    run(plan, "UPDATE call_requests SET state = 'done' WHERE unit_id = 'EDS-01' AND technician_id = 1")
+    assert avail("Friday").json()["ok"] is True
+
+
+def test_a_ringing_call_that_nobody_answered_does_not_count(plan):
+    run(plan, "UPDATE call_requests SET state = 'ringing' WHERE unit_id = 'EDS-01' AND technician_id = 1")
+    assert avail("Friday").json()["ok"] is False
+
+
+def test_the_day_rules(plan):
+    assert avail("Thursday").json()["earliest_day"] == 10          # today's weekday means today
+    assert avail("2026-10-16").json()["earliest_day"] == 11        # ISO date, Friday
+    assert avail("2026-10-01").json()["earliest_day"] == 10        # a day already gone means today
+    assert count(plan, "SELECT count(*) FROM constraints") == 2  # "Thursday" and the past date are the same day: stored once
+
+
+def test_feedback_moves_the_threshold_through_olises_rule(plan):
+    run(plan, "INSERT INTO engine_params (id, threshold, horizon_days) VALUES (1, 0.5, 14)")
+    for unit in ("EDS-01", "EDS-02"):
+        body = {"unit_id": unit, "technician_id": 1, "verdict": "looks_fine"}
+        assert client.post(f"{URL}/feedback", json=body).json()["ok"] is True
+    assert count(plan, "SELECT threshold FROM engine_params") == 0.5          # two verdicts: not enough data yet
+    client.post(f"{URL}/feedback", json={"unit_id": "EDS-04", "technician_id": 1, "verdict": "looks_fine"})
+    assert count(plan, "SELECT threshold FROM engine_params") == 0.55          # three false alarms: threshold goes up
+    ev = plan.execute(text("SELECT title, detail, payload FROM events WHERE type = 'threshold_adjusted'")).one()
+    assert ev[0] == "Alert threshold adjusted" and "0.50 to 0.55" in ev[1] and ev[2] == {"old": 0.5, "new": 0.55}
+    client.post(f"{URL}/feedback", json={"unit_id": "EDS-04", "technician_id": 1, "verdict": "looks_fine"})  # a repeat
+    assert count(plan, "SELECT threshold FROM engine_params") == 0.55
+    assert count(plan, "SELECT count(*) FROM events WHERE type = 'threshold_adjusted'") == 1
