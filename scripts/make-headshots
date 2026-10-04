@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Turn the generated roster headshots into the files the app uses.
+#   put the generator's output in docs/assets/headshots-src/  named  tech-<id>.png|jpg|jpeg|webp   (id 1 to 12, see docs/design/ROSTER_HEADSHOTS.md)
+#   ./scripts/make-headshots
+# Each image is centre-cropped to a square and written as a 512 px JPEG to web/public/people/tech-<id>.jpg.
+# (The roster shows it at 36 px, the panels at up to 72 px, so 512 px is plenty even on a projector.) Needs ffmpeg (brew install ffmpeg).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+command -v ffmpeg >/dev/null || { echo "ffmpeg is required: brew install ffmpeg" >&2; exit 1; }
+SRC=docs/assets/headshots-src; OUT=web/public/people
+mkdir -p "$OUT"
+shopt -s nullglob nocaseglob
+n=0
+for f in "$SRC"/tech-*.png "$SRC"/tech-*.jpg "$SRC"/tech-*.jpeg "$SRC"/tech-*.webp; do
+  base=$(basename "${f%.*}")
+  ffmpeg -v error -y -i "$f" -vf "crop='min(iw,ih)':'min(iw,ih)',scale=512:512:flags=lanczos" -c:v mjpeg -q:v 3 -pix_fmt yuvj420p "$OUT/$base.jpg"
+  printf '  %-12s -> %s (%s KB)\n' "$base" "$OUT/$base.jpg" "$(( $(stat -f%z "$OUT/$base.jpg") / 1024 ))"
+  n=$((n+1))
+done
+[ "$n" -gt 0 ] || { echo "No images found in $SRC (expected tech-1.png ... tech-12.png)." >&2; exit 1; }
+echo "Done: $n headshots. The Roster page uses them automatically; anyone without one keeps a letter avatar."

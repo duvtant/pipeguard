@@ -1,0 +1,516 @@
+{
+ "scenario_id": "demo_v1",
+ "seed": 42,
+ "calendar_start": "2026-10-05",
+ "units": [
+  {
+   "unit_id": "EDS-01",
+   "source_engine": 1,
+   "start_offset": 119
+  },
+  {
+   "unit_id": "EDS-02",
+   "source_engine": 2,
+   "start_offset": 75
+  },
+  {
+   "unit_id": "EDS-03",
+   "source_engine": 3,
+   "start_offset": 84
+  },
+  {
+   "unit_id": "EDS-04",
+   "source_engine": 4,
+   "start_offset": 87
+  },
+  {
+   "unit_id": "EDS-05",
+   "source_engine": 5,
+   "start_offset": 59
+  },
+  {
+   "unit_id": "EDS-06",
+   "source_engine": 6,
+   "start_offset": 1
+  },
+  {
+   "unit_id": "EDS-07",
+   "source_engine": 7,
+   "start_offset": 17
+  },
+  {
+   "unit_id": "EDS-08",
+   "source_engine": 8,
+   "start_offset": 75
+  },
+  {
+   "unit_id": "EDS-09",
+   "source_engine": 9,
+   "start_offset": 1
+  },
+  {
+   "unit_id": "EDS-10",
+   "source_engine": 10,
+   "start_offset": 31
+  },
+  {
+   "unit_id": "EDS-11",
+   "source_engine": 11,
+   "start_offset": 18
+  },
+  {
+   "unit_id": "EDS-12",
+   "source_engine": 12,
+   "start_offset": 27
+  },
+  {
+   "unit_id": "EDS-13",
+   "source_engine": 13,
+   "start_offset": 75
+  },
+  {
+   "unit_id": "EDS-14",
+   "source_engine": 14,
+   "start_offset": 55
+  },
+  {
+   "unit_id": "EDS-15",
+   "source_engine": 15,
+   "start_offset": 10
+  },
+  {
+   "unit_id": "EDS-16",
+   "source_engine": 16,
+   "start_offset": 11
+  },
+  {
+   "unit_id": "EDS-17",
+   "source_engine": 17,
+   "start_offset": 74
+  },
+  {
+   "unit_id": "EDS-18",
+   "source_engine": 18,
+   "start_offset": 1
+  },
+  {
+   "unit_id": "EDS-19",
+   "source_engine": 19,
+   "start_offset": 42
+  },
+  {
+   "unit_id": "EDS-20",
+   "source_engine": 20,
+   "start_offset": 11
+  },
+  {
+   "unit_id": "HIN-01",
+   "source_engine": 21,
+   "start_offset": 1
+  },
+  {
+   "unit_id": "HIN-02",
+   "source_engine": 22,
+   "start_offset": 151
+  },
+  {
+   "unit_id": "HIN-03",
+   "source_engine": 23,
+   "start_offset": 87
+  },
+  {
+   "unit_id": "HIN-04",
+   "source_engine": 24,
+   "start_offset": 30
+  },
+  {
+   "unit_id": "HIN-05",
+   "source_engine": 25,
+   "start_offset": 36
+  },
+  {
+   "unit_id": "HIN-06",
+   "source_engine": 26,
+   "start_offset": 2
+  },
+  {
+   "unit_id": "HIN-07",
+   "source_engine": 27,
+   "start_offset": 20
+  },
+  {
+   "unit_id": "HIN-08",
+   "source_engine": 28,
+   "start_offset": 78
+  },
+  {
+   "unit_id": "HIN-09",
+   "source_engine": 29,
+   "start_offset": 4
+  },
+  {
+   "unit_id": "HIN-10",
+   "source_engine": 30,
+   "start_offset": 1
+  },
+  {
+   "unit_id": "HIN-11",
+   "source_engine": 31,
+   "start_offset": 35
+  },
+  {
+   "unit_id": "HIN-12",
+   "source_engine": 32,
+   "start_offset": 53
+  },
+  {
+   "unit_id": "HIN-13",
+   "source_engine": 33,
+   "start_offset": 5
+  },
+  {
+   "unit_id": "HIN-14",
+   "source_engine": 34,
+   "start_offset": 1
+  },
+  {
+   "unit_id": "HIN-15",
+   "source_engine": 35,
+   "start_offset": 59
+  },
+  {
+   "unit_id": "HIN-16",
+   "source_engine": 36,
+   "start_offset": 45
+  },
+  {
+   "unit_id": "HIN-17",
+   "source_engine": 37,
+   "start_offset": 21
+  },
+  {
+   "unit_id": "HIN-18",
+   "source_engine": 38,
+   "start_offset": 14
+  },
+  {
+   "unit_id": "HIN-19",
+   "source_engine": 39,
+   "start_offset": 36
+  },
+  {
+   "unit_id": "HIN-20",
+   "source_engine": 40,
+   "start_offset": 108
+  },
+  {
+   "unit_id": "WHT-01",
+   "source_engine": 41,
+   "start_offset": 14
+  },
+  {
+   "unit_id": "WHT-02",
+   "source_engine": 42,
+   "start_offset": 58
+  },
+  {
+   "unit_id": "WHT-03",
+   "source_engine": 43,
+   "start_offset": 4
+  },
+  {
+   "unit_id": "WHT-04",
+   "source_engine": 44,
+   "start_offset": 48
+  },
+  {
+   "unit_id": "WHT-05",
+   "source_engine": 45,
+   "start_offset": 69
+  },
+  {
+   "unit_id": "WHT-06",
+   "source_engine": 46,
+   "start_offset": 21
+  },
+  {
+   "unit_id": "WHT-07",
+   "source_engine": 47,
+   "start_offset": 10
+  },
+  {
+   "unit_id": "WHT-08",
+   "source_engine": 48,
+   "start_offset": 33
+  },
+  {
+   "unit_id": "WHT-09",
+   "source_engine": 49,
+   "start_offset": 3
+  },
+  {
+   "unit_id": "WHT-10",
+   "source_engine": 50,
+   "start_offset": 118
+  },
+  {
+   "unit_id": "WHT-11",
+   "source_engine": 51,
+   "start_offset": 4
+  },
+  {
+   "unit_id": "WHT-12",
+   "source_engine": 52,
+   "start_offset": 8
+  },
+  {
+   "unit_id": "WHT-13",
+   "source_engine": 53,
+   "start_offset": 13
+  },
+  {
+   "unit_id": "WHT-14",
+   "source_engine": 54,
+   "start_offset": 30
+  },
+  {
+   "unit_id": "WHT-15",
+   "source_engine": 55,
+   "start_offset": 125
+  },
+  {
+   "unit_id": "WHT-16",
+   "source_engine": 56,
+   "start_offset": 20
+  },
+  {
+   "unit_id": "WHT-17",
+   "source_engine": 57,
+   "start_offset": 77
+  },
+  {
+   "unit_id": "WHT-18",
+   "source_engine": 58,
+   "start_offset": 15
+  },
+  {
+   "unit_id": "WHT-19",
+   "source_engine": 59,
+   "start_offset": 165
+  },
+  {
+   "unit_id": "WHT-20",
+   "source_engine": 60,
+   "start_offset": 35
+  },
+  {
+   "unit_id": "GPR-01",
+   "source_engine": 61,
+   "start_offset": 16
+  },
+  {
+   "unit_id": "GPR-02",
+   "source_engine": 62,
+   "start_offset": 70
+  },
+  {
+   "unit_id": "GPR-03",
+   "source_engine": 63,
+   "start_offset": 82
+  },
+  {
+   "unit_id": "GPR-04",
+   "source_engine": 64,
+   "start_offset": 63
+  },
+  {
+   "unit_id": "GPR-05",
+   "source_engine": 65,
+   "start_offset": 91
+  },
+  {
+   "unit_id": "GPR-06",
+   "source_engine": 66,
+   "start_offset": 53
+  },
+  {
+   "unit_id": "GPR-07",
+   "source_engine": 67,
+   "start_offset": 22
+  },
+  {
+   "unit_id": "GPR-08",
+   "source_engine": 68,
+   "start_offset": 1
+  },
+  {
+   "unit_id": "GPR-09",
+   "source_engine": 69,
+   "start_offset": 11
+  },
+  {
+   "unit_id": "GPR-10",
+   "source_engine": 70,
+   "start_offset": 37
+  },
+  {
+   "unit_id": "GPR-11",
+   "source_engine": 71,
+   "start_offset": 10
+  },
+  {
+   "unit_id": "GPR-12",
+   "source_engine": 72,
+   "start_offset": 23
+  },
+  {
+   "unit_id": "GPR-13",
+   "source_engine": 73,
+   "start_offset": 9
+  },
+  {
+   "unit_id": "GPR-14",
+   "source_engine": 74,
+   "start_offset": 19
+  },
+  {
+   "unit_id": "GPR-15",
+   "source_engine": 75,
+   "start_offset": 8
+  },
+  {
+   "unit_id": "GPR-16",
+   "source_engine": 76,
+   "start_offset": 4
+  },
+  {
+   "unit_id": "GPR-17",
+   "source_engine": 77,
+   "start_offset": 33
+  },
+  {
+   "unit_id": "GPR-18",
+   "source_engine": 78,
+   "start_offset": 28
+  },
+  {
+   "unit_id": "GPR-19",
+   "source_engine": 79,
+   "start_offset": 1
+  },
+  {
+   "unit_id": "GPR-20",
+   "source_engine": 80,
+   "start_offset": 90
+  },
+  {
+   "unit_id": "DRH-01",
+   "source_engine": 81,
+   "start_offset": 23
+  },
+  {
+   "unit_id": "DRH-02",
+   "source_engine": 82,
+   "start_offset": 8
+  },
+  {
+   "unit_id": "DRH-03",
+   "source_engine": 83,
+   "start_offset": 35
+  },
+  {
+   "unit_id": "DRH-04",
+   "source_engine": 84,
+   "start_offset": 27
+  },
+  {
+   "unit_id": "DRH-05",
+   "source_engine": 85,
+   "start_offset": 53
+  },
+  {
+   "unit_id": "DRH-06",
+   "source_engine": 86,
+   "start_offset": 20
+  },
+  {
+   "unit_id": "DRH-07",
+   "source_engine": 87,
+   "start_offset": 33
+  },
+  {
+   "unit_id": "DRH-08",
+   "source_engine": 88,
+   "start_offset": 17
+  },
+  {
+   "unit_id": "DRH-09",
+   "source_engine": 89,
+   "start_offset": 7
+  },
+  {
+   "unit_id": "DRH-10",
+   "source_engine": 90,
+   "start_offset": 46
+  },
+  {
+   "unit_id": "DRH-11",
+   "source_engine": 91,
+   "start_offset": 53
+  },
+  {
+   "unit_id": "DRH-12",
+   "source_engine": 92,
+   "start_offset": 63
+  },
+  {
+   "unit_id": "DRH-13",
+   "source_engine": 93,
+   "start_offset": 48
+  },
+  {
+   "unit_id": "DRH-14",
+   "source_engine": 94,
+   "start_offset": 45
+  },
+  {
+   "unit_id": "DRH-15",
+   "source_engine": 95,
+   "start_offset": 54
+  },
+  {
+   "unit_id": "DRH-16",
+   "source_engine": 96,
+   "start_offset": 138
+  },
+  {
+   "unit_id": "DRH-17",
+   "source_engine": 97,
+   "start_offset": 3
+  },
+  {
+   "unit_id": "DRH-18",
+   "source_engine": 98,
+   "start_offset": 38
+  },
+  {
+   "unit_id": "DRH-19",
+   "source_engine": 99,
+   "start_offset": 59
+  },
+  {
+   "unit_id": "DRH-20",
+   "source_engine": 100,
+   "start_offset": 40
+  }
+ ],
+ "planted_faults": [
+  {
+   "unit_id": "EDS-02",
+   "sensor": "s4",
+   "type": "stuck",
+   "start_day": 33
+  }
+ ],
+ "speed_seconds_per_day": 1.0
+}

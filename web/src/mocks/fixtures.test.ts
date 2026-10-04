@@ -105,7 +105,7 @@ describe('events, calls and roster', () => {
     expect(TECHNICIANS.filter((t) => t.is_backup).length).toBeGreaterThanOrEqual(2)
   })
   it('builds a detail view for any unit', () => {
-    const d = makeDetail(makeFleet().find((u) => u.unit_id === 'EDS-07')!)
+    const d = makeDetail(makeFleet().find((u) => u.unit_id === 'EDS-07')!, EVENTS, CALLS)
     expect(d.history).toHaveLength(30)
     expect(d.sensors).toHaveLength(3)
     expect(d.calls.length).toBe(1)

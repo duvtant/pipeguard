@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PipeGuard in the Mercury language</title>
+<!-- PREVIEW ONLY. Fonts and icons load from CDNs here. The real app bundles fonts (@fontsource) and icons (unplugin-icons).
+     Mercury's own typeface (Arcadia) is custom; these are the closest free fonts. Colours were measured from Mercury screenshots. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300..800&family=Figtree:wght@300..900&family=DM+Sans:wght@300..900&display=swap" rel="stylesheet">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+:root{
+  --font:'Figtree',system-ui,sans-serif; --w:420; --w-strong:480;
+  /* Ink and neutrals. Mercury's text is near-black with a blue undertone; backgrounds are cool near-white. */
+  --ink:#080911; --text:#2A2C3B; --muted:#5B5E70; --subtle:#6A6D82;
+  --canvas:#FFFFFF; --shell:#FAFCFE; --pill:#F1F3F4;
+  --line:#E8E9F4; --ring:rgba(83,103,235,.16);
+  /* Periwinkle accent (primary measured #5367EB). --accent-ink is the darker text-safe version for links. */
+  --accent:#5367EB; --accent-ink:#3F52D4; --accent-soft:#EEF0FE; --accent-line:#7C88E8; --accent-fill:#E5E9FC;
+  /* Card footer "insight strip": lavender-grey fading to blush (measured). */
+  --g-insight:linear-gradient(90deg,#EFEEF1 0%,#F0EFF4 40%,#F0E7E8 75%,#EFE0E5 100%);   /* measured from Mercury */
+  --g-calm:linear-gradient(90deg,#E8F3F2 0%,#E5EFF7 40%,#E7E9FB 75%,#EBE3F8 100%);       /* positive / all clear */
+  --g-attn:linear-gradient(90deg,#FCEFE4 0%,#FBE7E3 45%,#F9DEE7 100%);                    /* needs your attention */
+  --strip:var(--g-insight);
+  /* Status, tuned to Mercury's warmth. Every status still has its own icon and label. */
+  --ok:#0E7A55; --ok-tint:#E6F5EF; --ok-fill:#1FA37A;
+  --warn:#8F5600; --warn-tint:#FFF1D6; --warn-fill:#C47A00;
+  --risk:#B3204F; --risk-tint:#FCE8EF; --risk-fill:#D43471;
+  --sens:#555B70; --sens-tint:#EDEFF5; --sens-fill:#7A8197;
+  --fail:#20232F; --fail-tint:#E8E9EF;
+  --shadow:0 0 0 1px var(--line), 0 8px 24px -12px rgba(83,103,235,.22);
+  --radius:18px;
+}
+/* Projector mode: stronger edges, darker secondary text, heavier chart lines (the pale originals wash out). */
+body.proj{ --line:#C6C9E2; --muted:#444859; --subtle:#525669; --ring:rgba(83,103,235,.35); --accent-line:#5367EB; }
+body.proj .card{box-shadow:0 0 0 1.5px var(--line), 0 8px 24px -12px rgba(83,103,235,.28)}
+body.proj .area-line{stroke-width:3.5}
+
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--text);font-family:system-ui,sans-serif}
+.bar{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid #ddd;padding:10px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font:14px system-ui}
+.bar h1{font-size:15px;margin:0 8px 0 0}
+.bar button{font:600 13px system-ui;padding:7px 12px;border:1px solid #bbb;background:#fff;border-radius:8px;cursor:pointer}
+.bar button[aria-pressed="true"]{background:#111;color:#fff;border-color:#111}
+.bar .sp{width:1px;height:22px;background:#ddd;margin:0 6px}
+.bar span.l{color:#666;font-size:13px}
+.stage{padding:20px;background:#E9EAF1}
+.app{font-weight:var(--w);display:grid;grid-template-columns:250px 1fr;background:var(--canvas);font-family:var(--font);color:var(--text);font-size:15px;line-height:22px;max-width:1280px;margin:0 auto;min-height:820px;border-radius:12px;overflow:hidden;box-shadow:0 10px 40px -20px rgba(0,0,0,.35);position:relative}
+.side{background:var(--shell);border-right:1px solid var(--line);padding:16px 14px}
+.org{display:flex;align-items:center;gap:10px;padding:6px 6px 16px;font-weight:var(--w-strong);color:var(--ink)}
+.av{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:600;font-size:14px;color:#1d3f55}
+.nav{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:12px;color:var(--ink);font-weight:var(--w)}
+.nav iconify-icon{color:var(--muted)}
+.nav.on{background:var(--pill);font-weight:var(--w-strong)}.nav.on iconify-icon{color:var(--accent)}
+.grp{font-size:14px;color:var(--subtle);padding:18px 12px 6px}
+.main{padding:18px 40px 40px;min-width:0}
+.top{display:flex;gap:12px;align-items:center;margin-bottom:26px}
+.search{flex:1;border:1px solid var(--line);border-radius:12px;padding:10px 14px;display:flex;gap:10px;align-items:center;color:var(--subtle);font-size:15px;box-shadow:0 1px 2px rgba(83,103,235,.05)}
+.search kbd{margin-left:auto;font:12px var(--font);background:var(--pill);border-radius:6px;padding:1px 6px;color:var(--muted)}
+.pillbtn{border:1px solid var(--line);border-radius:999px;padding:9px 16px;color:var(--accent-ink);font-weight:var(--w-strong);display:flex;gap:6px;align-items:center;background:#fff}
+.circ{width:40px;height:40px;border-radius:50%;background:var(--pill);display:grid;place-items:center;color:var(--muted);position:relative}
+.circ .dot{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--risk-fill);border:2px solid #fff}
+h1.page{font-size:38px;line-height:44px;font-weight:var(--w);color:var(--ink);margin:0 0 18px;letter-spacing:-.01em}
+.chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;align-items:center}
+.chip{display:flex;gap:8px;align-items:center;background:var(--pill);border-radius:999px;padding:9px 16px;color:var(--ink);font-weight:var(--w);border:0;font-family:inherit;font-size:15px}
+.chip.p{background:var(--accent);color:#fff;font-weight:var(--w-strong)}
+.chip.r{margin-left:auto;background:none;color:var(--ink)}
+.grid{display:grid;gap:20px}
+.g2{grid-template-columns:1.45fr 1fr}.g2b{grid-template-columns:1fr 1fr}
+.card{background:var(--canvas);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;position:relative}
+.pad{padding:26px 28px}.pad.col{display:flex;flex-direction:column}.chartbox{flex:1;min-height:200px;margin:6px -28px 0;display:flex}.chartbox svg{height:100%;min-height:200px}
+.ch{display:flex;align-items:center;gap:8px;color:var(--text);font-size:16px;margin-bottom:6px}
+.ch .sp{margin-left:auto;display:flex;gap:8px;align-items:center}
+.seal{color:var(--accent)}
+.num{font-size:46px;line-height:50px;color:var(--ink);font-weight:var(--w-strong);letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.num sup{font-size:.4em;line-height:1;font-weight:var(--w-strong);vertical-align:top;position:relative;top:.55em;margin-left:4px;color:var(--muted);letter-spacing:0}
+.num.s{font-size:30px;line-height:34px}
+.per{display:flex;align-items:center;justify-content:space-between;margin:10px 0 6px;color:var(--text)}
+.sel{display:flex;gap:6px;align-items:center}
+.delta{color:var(--risk);font-weight:var(--w-strong);display:flex;gap:4px;align-items:center}
+.toggle{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.toggle span{padding:8px 11px;color:var(--muted);display:grid;place-items:center}.toggle span.on{background:#fff;color:var(--accent);box-shadow:inset 0 0 0 1px var(--ring)}
+.rows .r{display:flex;align-items:center;gap:14px;padding:12px 0}
+.rows .r .av{width:36px;height:36px;border-radius:50%}
+.rows .r .t{color:var(--ink)}.rows .r .v{margin-left:auto;text-align:right;color:var(--ink)}
+.strip{background:var(--strip);padding:16px 28px;display:flex;align-items:center;gap:14px;color:var(--ink)}
+.strip.calm{background:var(--g-calm)}.strip.attn{background:var(--g-attn)}
+.strip .si{width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.78);display:grid;place-items:center;flex:none;color:var(--accent)}
+.strip.calm .si{color:var(--ok)}.strip.attn .si{color:var(--risk)}
+.strip b{font-weight:var(--w-strong);display:block}.strip span{color:var(--muted);font-size:14px}
+.strip .go{margin-left:auto;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.7);display:grid;place-items:center;color:var(--ink);flex:none}
+.strip .go.pillgo{width:auto;border-radius:999px;padding:8px 16px;gap:6px;display:flex;font-weight:var(--w-strong)}
+.pill{display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:600;padding:3px 10px 3px 8px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-tint);color:var(--ok)}.pill.warn{background:var(--warn-tint);color:var(--warn)}.pill.risk{background:var(--risk-tint);color:var(--risk)}
+.pill.sens{background:var(--sens-tint);color:var(--sens)}.pill.fail{background:var(--fail-tint);color:var(--fail)}
+.tiles{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;margin-top:14px}
+.tile{border-radius:12px;padding:10px 10px 9px;min-height:62px;background:#fff;box-shadow:0 0 0 1px var(--line);position:relative;display:flex;flex-direction:column;gap:6px}
+.tile .id{font-size:13px;letter-spacing:-.01em;font-weight:var(--w-strong);color:var(--ink);font-variant-numeric:tabular-nums}
+.tile .d{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tile .ic{position:absolute;right:9px;bottom:8px}
+.tile.ok .ic{color:var(--ok-fill)}
+.tile.warn{background:var(--warn-tint);box-shadow:none}.tile.warn .ic{color:var(--warn)}
+.tile.risk{background:var(--risk-tint);box-shadow:none}.tile.risk .ic{color:var(--risk)}
+.tile.sens{background:var(--sens-tint);box-shadow:none}.tile.sens .ic{color:var(--sens)}
+.tile.fail{background:var(--fail-tint);box-shadow:none}.tile.fail .ic{color:var(--fail)}
+.tile .wb{position:absolute;right:8px;top:7px;color:var(--sens);background:#fff;border-radius:50%;width:18px;height:18px;display:grid;place-items:center;box-shadow:0 0 0 1px var(--line)}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.stat3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.stat3 .l{color:var(--muted);font-size:14px}
+.stat3 .n{font-size:26px;line-height:32px;color:var(--ink);font-weight:var(--w-strong);font-variant-numeric:tabular-nums}
+.sub{color:var(--muted);font-size:14px}
+svg text{font-family:var(--font)}
+.xlabels{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;padding:0 4px;margin-top:6px}
+.tip{position:absolute;background:#1B1D2A;color:#fff;border-radius:10px;padding:10px 12px;font-size:13px;line-height:20px;box-shadow:0 10px 24px -8px rgba(0,0,0,.4);min-width:170px}
+.tip i{display:inline-block;width:3px;height:12px;border-radius:2px;margin-right:8px;vertical-align:-2px}
+.tip .k{display:flex;justify-content:space-between;gap:20px}
+.sliderrow{margin-top:18px}.sliderrow label{display:flex;justify-content:space-between;color:var(--text);margin-bottom:6px}.sliderrow label b{font-weight:var(--w-strong);color:var(--ink)}
+input[type=range]{width:100%;accent-color:var(--accent);height:6px}
+.panel{position:absolute;top:0;right:0;bottom:0;width:430px;background:#fff;box-shadow:-20px 0 50px -20px rgba(8,9,17,.3);z-index:6;display:flex;flex-direction:column}
+.scrim{position:absolute;inset:0;background:rgba(250,252,254,.7);z-index:5}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.fact{border-radius:14px;background:var(--shell);box-shadow:0 0 0 1px var(--line);padding:12px 14px}
+.fact .l{color:var(--muted);font-size:13px}
+.tl{margin:6px 0 0;padding:0;list-style:none}
+.tl li{display:flex;gap:12px;padding:0 0 16px;position:relative}
+.tl li:before{content:"";position:absolute;left:11px;top:24px;bottom:0;width:1px;background:var(--line)}
+.tl li:last-child:before{display:none}
+.tl .dot{width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+.tl b{font-weight:var(--w-strong);color:var(--ink);display:block}.tl span{color:var(--muted);font-size:14px}
+.view{display:none}.view.on{display:block}
+.phonewrap{display:flex;justify-content:center;padding:34px;background:linear-gradient(160deg,#EEF0FB,#F6ECEF)}
+.phone{width:350px;height:690px;border-radius:40px;border:10px solid #1B1D2A;background:#fff;overflow:hidden;font-family:var(--font);color:var(--text);display:flex;flex-direction:column;position:relative}
+.phone .hero{padding:58px 28px 0;text-align:center}
+.phone .hero .small{color:var(--muted);font-size:14px}
+.phone h4{font-size:30px;line-height:36px;font-weight:var(--w-strong);color:var(--ink);margin:6px 0}
+.phone .why{margin:22px 22px 0;border-radius:16px;box-shadow:0 0 0 1px var(--line);padding:14px 16px;font-size:15px}
+.phone .calls{margin-top:auto;padding:0 30px 20px;display:flex;justify-content:space-between}
+.round{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;color:#fff}
+.lab{text-align:center;margin-top:8px;font-weight:var(--w-strong);color:var(--ink)}
+.phone .strip{padding:14px 22px;font-size:14px}
+.gcards{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:8px}
+.gcard{border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);background:#fff}
+.gcard .sw{height:150px}.gcard .in{padding:18px 20px}.gcard h3{margin:0 0 4px;font-size:18px;font-weight:var(--w-strong);color:var(--ink)}
+.gcard code{font:12px ui-monospace,monospace;color:var(--muted);display:block;margin:8px 0}
+.gcard ul{margin:8px 0 0;padding-left:18px;color:var(--text);font-size:14px}
+@media (max-width:1000px){.app{grid-template-columns:1fr}.side{display:none}.g2,.g2b{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="bar">
+  <h1>PipeGuard · Mercury language</h1>
+  <button data-view="fleet" aria-pressed="true">Fleet</button>
+  <button data-view="impact" aria-pressed="false">Impact</button>
+  <button data-view="unit" aria-pressed="false">Unit panel</button>
+  <button data-view="phone" aria-pressed="false">Phone call</button>
+  <button data-view="gradients" aria-pressed="false">Gradients</button>
+  <div class="sp"></div>
+  <span class="l">Font</span>
+  <button data-font="Plus Jakarta Sans" aria-pressed="true">Plus Jakarta</button>
+  <button data-font="Figtree" aria-pressed="false">Figtree</button>
+  <button data-font="DM Sans" aria-pressed="false">DM Sans</button>
+  <div class="sp"></div>
+  <button id="proj" aria-pressed="false">Projector mode</button>
+  <span class="l">Keys: 1 to 5 for screens, P for projector</span>
+</div>
+<div class="stage" id="stage"></div>
+
+<script>
+const I=(n,s=18,x='')=>`<iconify-icon icon="ph:${n}" width="${s}" height="${s}" ${x}></iconify-icon>`;
+const LAB={ok:'Healthy',warn:'Watch',risk:'At risk',sens:'Sensor issue',fail:'Failed'};
+const SI={ok:'check-circle-fill',warn:'warning-fill',risk:'warning-octagon-fill',sens:'wrench-fill',fail:'x-circle-fill'};
+const pill=(s,t)=>`<span class="pill ${s}">${I(SI[s],15)}${t||LAB[s]}</span>`;
+
+// 20 units, 10 per row. 'risk+sens' = a real risk with a faulty sensor: stays red, with a wrench badge.
+const U=[['01','ok',118],['02','ok',104],['03','ok',97],['04','warn',58],['05','ok',121],['06','ok',90],['07','risk',22],['08','ok',112],['09','warn',41],['10','ok',99],
+         ['11','sens',98],['12','ok',87],['13','ok',110],['14','risk',15],['15','fail',0],['16','ok',103],['17','warn',47],['18','ok',116],['19','risk+sens',21],['20','ok',95]];
+const tiles=U.map(([n,s,d])=>{const b=s.split('+')[0],w=s.includes('+sens');
+  return `<div class="tile ${b}"><span class="ic">${I(SI[b],16)}</span><span class="id">EDS-${n}</span><span class="d">${b==='fail'?'Failed':d+' d'}</span>${w?`<span class="wb">${I('wrench-fill',12)}</span>`:''}</div>`}).join('');
+
+const sidebar=(on)=>`<aside class="side">
+  <div class="org"><span class="av" style="background:#CCE6F2">P</span>Prairie Gas<span style="margin-left:auto;color:var(--subtle)">${I('caret-down',14)}</span></div>
+  ${[['fleet','squares-four-light','Fleet'],['plan','calendar-check-light','Plan'],['impact','chart-bar-light','Impact'],['log','list-checks-light','Decision log']].map(([k,i,l])=>`<div class="nav ${on===k?'on':''}">${I(i,20)}${l}</div>`).join('')}
+  <div class="grp">Workflows</div>
+  ${[['users-light','Roster'],['clipboard-text-light','Work orders'],['gear-light','Settings']].map(([i,l])=>`<div class="nav">${I(i,20)}${l}</div>`).join('')}
+</aside>`;
+const topbar=`<div class="top"><div class="search">${I('magnifying-glass-light',20)}Search for a unit or a technician<kbd>⌘ K</kbd></div>
+  <div class="pillbtn">${I('clock-light',18)}Tue, Nov 3 · Day 29 ${I('caret-down',14)}</div>
+  <div class="circ">${I('bell-light',20)}<span class="dot"></span></div><div class="circ" style="background:#CEE9EB;color:#1d3f55;font-weight:600;font-size:14px">MR</div></div>`;
+
+// Gradient area chart: the signature Mercury move (lavender fade under a soft line).
+const area=(id,pts,w=600,h=190,hh=h)=>`<svg viewBox="0 0 ${w} ${h}" width="100%" height="${hh}" preserveAspectRatio="none" role="img" aria-label="Chart">
+  <defs><linearGradient id="${id}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#5367EB" stop-opacity=".22"/><stop offset="1" stop-color="#5367EB" stop-opacity=".02"/></linearGradient></defs>
+  <path d="M${pts} L${w},${h} L0,${h} Z" fill="url(#${id})"/><polyline class="area-line" fill="none" stroke="var(--accent-line)" stroke-width="2.5" stroke-linejoin="round" points="${pts}"/></svg>`;
+
+const views={
+fleet:`<div class="app">${sidebar('fleet')}<main class="main">${topbar}
+  <h1 class="page">Fleet overview</h1>
+  <div class="chips"><button class="chip p">${I('play-fill',16)}Play replay</button><button class="chip">${I('phone-call',16)}Simulate call</button><button class="chip">${I('calendar-check-light',16)}Open weekly plan</button><button class="chip">${I('download-simple-light',16)}Work orders</button><button class="chip r">⋮ Customize</button></div>
+  <div class="grid g2">
+    <div class="card pad col"><div class="ch">Units needing attention ${I('seal-check-fill',18,'class="seal"')}<span class="sp"><span class="toggle"><span class="on">${I('chart-line-light',18)}</span><span>${I('table-light',18)}</span></span></span></div>
+      <div class="num">3<sup>units</sup></div>
+      <div class="per"><span class="sel">Last 30 days ${I('caret-down',14)}</span><span class="delta">${I('arrow-up-right',14)}+1 this week</span></div>
+      <div class="chartbox">${area('g1','0,170 60,168 120,160 180,162 240,150 300,146 360,130 420,126 480,100 540,76 600,52',600,190,'100%')}</div>
+      <div class="xlabels"><span>Oct 5</span><span>Oct 12</span><span>Oct 19</span><span>Oct 26</span><span>Nov 3</span></div></div>
+    <div class="card"><div class="pad" style="padding-bottom:6px"><div class="ch">Stations<span class="sp">${I('plus',18)}${I('dots-three-vertical',16)}</span></div>
+      <div class="rows">${[['E','#CCE6F2','Edson','20 units','risk','1 at risk'],['H','#E3DDF6','Hinton','20 units','ok','Healthy'],['W','#F6E0E6','Whitecourt','20 units','warn','2 watch'],['G','#D8EFE3','Grande Prairie','20 units','risk','2 at risk'],['D','#FBEBCB','Drumheller','20 units','sens','1 sensor issue']].map(([c,bg,n,u,s,t])=>`<div class="r"><span class="av" style="background:${bg}">${c}</span><span class="t">${n}<br><span class="sub">${u}</span></span><span class="v">${pill(s,t)}</span></div>`).join('')}</div></div>
+      <div class="strip"><span class="si">${I('info',18)}</span><div><b>2 crews on shift per station</b><span>Change crew size in Settings</span></div><span class="go">${I('arrow-right',16)}</span></div></div>
+  </div>
+  <div class="card pad" style="margin-top:20px"><div class="ch">Edson · 20 turbines<span class="sp">${I('dots-three-vertical',16)}</span></div>
+    <div class="legend">${['ok','warn','risk','sens','fail'].map(s=>pill(s)).join('')}</div><div class="tiles">${tiles}</div></div>
+  <div class="grid g2b" style="margin-top:20px">
+    <div class="card"><div class="pad"><div class="ch">This week's plan<span class="sp">${I('dots-three-vertical',16)}</span></div>
+      <div class="stat3"><div><div class="l">Scheduled</div><div class="n">8</div></div><div><div class="l">Needs decision</div><div class="n" style="color:var(--risk)">1</div></div><div><div class="l">Completed</div><div class="n">3</div></div></div></div>
+      <div class="strip attn"><span class="si">${I('warning-octagon-fill',18)}</span><div><b>EDS-14 needs a manager decision</b><span>No crew slot is free this week</span></div><span class="go pillgo">${I('arrow-right',14)}Review</span></div></div>
+    <div class="card"><div class="pad"><div class="ch">Voice calls<span class="sp">${I('plus',18)}${I('dots-three-vertical',16)}</span></div>
+      <div class="stat3" style="grid-template-columns:repeat(2,1fr)"><div><div class="l">Answered</div><div class="n">2</div></div><div><div class="l">Missed</div><div class="n">1</div></div></div>
+      <div style="margin-top:18px;display:flex;align-items:center;border-top:1px solid var(--line);padding-top:14px"><div><div class="sub">Open</div>1 call · EDS-07 · est. saving $11,000</div><span style="margin-left:auto;color:var(--accent-ink);font-weight:var(--w-strong);display:flex;align-items:center;gap:4px">View ${I('caret-right',14)}</span></div></div></div>
+  </div></main></div>`,
+
+impact:`<div class="app">${sidebar('impact')}<main class="main">${topbar}
+  <h1 class="page">Impact</h1>
+  <div class="chips"><button class="chip p">${I('arrows-clockwise-light',16)}Run simulation</button><button class="chip">${I('sliders-horizontal-light',16)}Reset sliders</button><button class="chip">${I('download-simple-light',16)}Export</button></div>
+  <div class="grid g2">
+    <div class="card pad"><div class="ch">Total cost over the replay ${I('seal-check-fill',18,'class="seal"')}<span class="sp"><span class="toggle"><span class="on">${I('chart-line-light',18)}</span><span>${I('table-light',18)}</span></span></span></div>
+      <div style="display:flex;gap:34px;margin-top:6px;flex-wrap:wrap">
+        <div><div class="sub">Run until it breaks</div><div class="num s" style="color:var(--muted)">$20.0<sup>M</sup></div></div>
+        <div><div class="sub">Fixed schedule</div><div class="num s" style="color:var(--muted)">$9.4<sup>M</sup></div></div>
+        <div><div class="sub" style="color:var(--accent-ink);font-weight:var(--w-strong)">PipeGuard</div><div class="num">$3.38<sup>M</sup></div></div></div>
+      <div style="position:relative;margin:14px -28px 0">
+        <svg viewBox="0 0 600 210" width="100%" height="210" preserveAspectRatio="none">
+          <defs><linearGradient id="g2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#5367EB" stop-opacity=".24"/><stop offset="1" stop-color="#5367EB" stop-opacity=".02"/></linearGradient></defs>
+          <polyline fill="none" stroke="#B8BCCB" stroke-width="2.5" stroke-dasharray="6 6" points="0,190 100,172 200,146 300,112 400,84 500,52 600,22"/>
+          <polyline fill="none" stroke="#7A8197" stroke-width="2.5" points="0,190 100,178 200,160 300,138 400,118 500,98 600,80"/>
+          <path d="M0,192 100,186 200,176 300,166 400,156 500,146 600,138 L600,210 L0,210Z" fill="url(#g2)"/>
+          <polyline class="area-line" fill="none" stroke="var(--accent-line)" stroke-width="3" points="0,192 100,186 200,176 300,166 400,156 500,146 600,138"/>
+          <circle cx="400" cy="156" r="6" fill="#fff" stroke="#5367EB" stroke-width="3"/></svg>
+        <div class="tip" style="left:56%;top:6px"><div style="color:#B9BDD3;margin-bottom:4px">Day 21</div>
+          <div class="k"><span><i style="background:#B8BCCB"></i>Run until it breaks</span><b>$14.2M</b></div><div class="k"><span><i style="background:#7A8197"></i>Fixed schedule</span><b>$7.1M</b></div><div class="k"><span><i style="background:#5367EB"></i>PipeGuard</span><b>$2.1M</b></div></div></div>
+      <div class="xlabels" style="margin-top:8px"><span>Day 0</span><span>Day 30</span><span>Day 60</span><span>Day 90</span><span>Day 120</span></div></div>
+    <div class="card"><div class="pad"><div class="ch">What if?<span class="sp">${I('dots-three-vertical',16)}</span></div><p class="sub" style="margin:0 0 4px">Move a slider and the results update instantly.</p>
+      <div class="sliderrow"><label>Crews per station <b>2</b></label><input type="range" min="0" max="5" value="2"></div>
+      <div class="sliderrow"><label>Cost of a breakdown <b>$200,000</b></label><input type="range" min="0" max="100" value="40"></div>
+      <div class="sliderrow"><label>Cost of a planned service <b>$20,000</b></label><input type="range" min="0" max="100" value="20"></div></div>
+      <div class="strip calm"><span class="si">${I('check-circle-fill',18)}</span><div><b>Self-tuned beats default by $720K</b><span>Threshold 0.40 vs 0.50</span></div><span class="go">${I('arrow-right',16)}</span></div></div>
+  </div>
+  <div class="grid g2b" style="margin-top:20px">
+    <div class="card pad"><div class="ch">Failures caught early</div><div class="num">88<sup>of 100</sup></div><p class="sub" style="margin:6px 0 0">Flagged at least 14 days before failure and serviced in time.</p></div>
+    <div class="card pad"><div class="ch">Prediction error</div><div class="num">14.8<sup>cycles</sup></div><p class="sub" style="margin:6px 0 0">Down from 27.5 for the simple baseline model.</p></div>
+  </div></main></div>`,
+
+unit:`<div class="app">${sidebar('fleet')}<main class="main">${topbar}<h1 class="page">Fleet overview</h1>
+  <div class="card pad"><div class="ch">Edson · 20 turbines</div><div class="tiles">${tiles}</div></div></main>
+  <div class="scrim"></div>
+  <aside class="panel"><div style="padding:22px 28px 0;display:flex;align-items:center;gap:10px"><span style="font-size:22px;color:var(--ink);font-weight:var(--w-strong)">EDS-07</span>${pill('risk')}<span style="margin-left:auto;color:var(--muted)">${I('x',20)}</span></div>
+    <div style="padding:6px 28px 0;color:var(--muted)">Edson · Turbine 7</div>
+    <div style="padding:14px 28px 0;overflow:auto">
+      <div class="sub" style="color:var(--ink);font-weight:var(--w-strong)">Why it was flagged</div>
+      <p style="margin:6px 0 0">High-pressure compressor outlet temperature has been rising for 6 days.</p>
+      <div class="facts"><div class="fact"><div class="l">Remaining life</div><div class="num s">22<sup>days</sup></div></div><div class="fact"><div class="l">Range</div><div class="num s">14<sup>to 35</sup></div></div><div class="fact"><div class="l">Confidence</div><div style="font-size:18px;color:var(--ink);font-weight:var(--w-strong);margin-top:6px">Normal</div></div></div>
+      <div class="sub" style="color:var(--ink);font-weight:var(--w-strong)">Failure probability, last 30 days</div>
+      <div style="margin:4px -28px 0">${area('g3','0,116 60,114 120,110 180,105 240,98 300,90 360,78 420,66 480,52 540,40 600,28',600,130)}</div>
+      <div class="sub" style="color:var(--ink);font-weight:var(--w-strong);margin:18px 0 10px">What happened</div>
+      <ul class="tl">
+        <li><span class="dot">${I('warning-octagon-fill',13)}</span><div><b>Flagged at risk</b><span>Tue 8:02 · confirmed over 3 readings</span></div></li>
+        <li><span class="dot">${I('phone-call',13)}</span><div><b>Technician called</b><span>Aiden Walker answered · "Not before Friday"</span></div></li>
+        <li><span class="dot">${I('calendar-check-light',14)}</span><div><b>Plan changed</b><span>Moved to Fri Nov 6 · EDS-02 takes Thursday</span></div></li></ul></div>
+    <div class="strip calm" style="margin-top:auto"><span class="si">${I('check-circle-fill',18)}</span><div><b>Service booked for Fri Nov 6</b><span>Crew 1 · Aiden Walker</span></div><span class="go pillgo">View plan</span></div></aside></div>`,
+
+gradients:`<div class="app" style="grid-template-columns:1fr"><main class="main"><h1 class="page">Gradients</h1>
+  <p class="sub" style="margin:-8px 0 18px;max-width:760px">Three soft gradients, each with one job. A gradient is never the only signal: every strip also carries an icon and words, so it still works in greyscale and for colour-blind viewers.</p>
+  <div class="gcards">
+   <div class="gcard"><div class="sw" style="background:var(--g-insight)"></div><div class="in"><h3>Insight</h3><code>#EFEEF1 → #F0E7E8 → #EFE0E5<br>lavender-grey to blush · measured from Mercury</code><ul><li>Neutral guidance and next steps</li><li>"2 crews on shift", plan notes</li><li>Default card footers</li></ul></div></div>
+   <div class="gcard"><div class="sw" style="background:var(--g-calm)"></div><div class="in"><h3>Calm</h3><code>#E8F3F2 → #E5EFF7 → #EBE3F8<br>mint to sky to lilac · proposed</code><ul><li>Good news and confirmations</li><li>"Service booked", "Self-tuned beats default"</li><li>All-clear empty states</li></ul></div></div>
+   <div class="gcard"><div class="sw" style="background:var(--g-attn)"></div><div class="in"><h3>Attention</h3><code>#FCEFE4 → #FBE7E3 → #F9DEE7<br>peach to rose · proposed</code><ul><li>Something needs a person</li><li>"Needs a manager decision", the incoming call</li><li>Never used for decoration</li></ul></div></div>
+  </div>
+  <div class="grid g2b" style="margin-top:24px"><div class="card"><div class="pad"><div class="ch">In use</div></div><div class="strip"><span class="si">${I('info',18)}</span><div><b>2 crews on shift per station</b><span>Insight</span></div></div><div class="strip calm"><span class="si">${I('check-circle-fill',18)}</span><div><b>Service booked for Fri Nov 6</b><span>Calm</span></div></div><div class="strip attn"><span class="si">${I('warning-octagon-fill',18)}</span><div><b>EDS-14 needs a manager decision</b><span>Attention</span></div></div></div>
+  <div class="card pad"><div class="ch">Richer versions for imagery</div><p class="sub" style="margin:0">For the sign-in page, the deck cover and large empty states, your image generator can produce soft mesh gradients in these same three palettes, exported as WebP. The CSS versions above cover everything inside the app.</p></div></div></main></div>`,
+phone:`<div class="phonewrap"><div class="phone"><div class="hero"><div class="small">PipeGuard · Edson</div><h4>Unit EDS-07 needs attention</h4><div style="display:flex;justify-content:center;margin-top:8px">${pill('risk','At risk · 14 to 35 days')}</div><div class="small" style="margin-top:10px">Ringing · answer within 24 s</div></div>
+  <div class="why"><div class="sub" style="color:var(--ink);font-weight:var(--w-strong);margin-bottom:4px">Why</div>High-pressure compressor outlet temperature has risen for 6 days.</div>
+  <div class="strip attn" style="margin:16px 22px 0;border-radius:16px"><span class="si">${I('phone-call',18)}</span><div><b>Can your crew service it by Thursday?</b></div></div>
+  <div class="calls"><div><div class="round" style="background:var(--risk-fill)">${I('phone-x',34)}</div><div class="lab">Decline</div></div><div><div class="round" style="background:var(--ok-fill)">${I('phone-call',34)}</div><div class="lab">Answer</div></div></div></div></div>`
+};
+
+function show(v){
+  document.getElementById('stage').innerHTML=views[v];
+  document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===v));
+  document.title='PipeGuard · Mercury · '+v;
+}
+function font(f){document.documentElement.style.setProperty('--font',`'${f}',system-ui,sans-serif`);
+  document.querySelectorAll('[data-font]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.font===f));}
+function proj(on){document.body.classList.toggle('proj',on);document.getElementById('proj').setAttribute('aria-pressed',on);}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>show(b.dataset.view));
+document.querySelectorAll('[data-font]').forEach(b=>b.onclick=()=>font(b.dataset.font));
+document.getElementById('proj').onclick=()=>proj(!document.body.classList.contains('proj'));
+addEventListener('keydown',e=>{const m={'1':'fleet','2':'impact','3':'unit','4':'phone','5':'gradients'};if(m[e.key])show(m[e.key]);if(e.key==='p'||e.key==='P')proj(!document.body.classList.contains('proj'));});
+const q=new URLSearchParams(location.search); font(q.get('font')||'Figtree'); if(q.get('proj')==='1')proj(true); show(q.get('v')||'fleet');
+</script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+{
+  "spec": "docs/design/DESIGN.md Section 8",
+  "verification": {
+    "exactDimensions": true,
+    "formatsChecked": true,
+    "fullRasterDecode": true,
+    "svgRendered": true,
+    "svgUsesVectorPaths": true,
+    "sizeBudgetsPassed": true,
+    "visualReview": true,
+    "softwareWashoutPreview": true,
+    "physicalProjectorChecked": false,
+    "sizeBudgetScope": "Optimized WebP exports; original user PNG and lossless PNG derivatives are not subject to the WebP limits.",
+    "logoTransparencyChecked": true,
+    "faviconFramesDecoded": true,
+    "homeScreenIconsOpaque": true,
+    "socialPreviewDimensionsChecked": true
+  },
+  "assets": [
+    {
+      "file": "logo-mark.svg",
+      "width": 512,
+      "height": 512,
+      "format": "svg",
+      "bytes": 3663,
+      "transparent": true,
+      "source": "proposedlogo.png",
+      "sha256": "5cb03da0f8d7578718467c690ebfd4257803bf22b09dc74976c037fdbf43ebc1"
+    },
+    {
+      "file": "logo-mark.webp",
+      "width": 512,
+      "height": 512,
+      "format": "webp",
+      "bytes": 16020,
+      "transparent": true,
+      "source": "proposedlogo.png",
+      "sha256": "f30a73ce98e83e39c94c208b3cbf45c858d6f9f0159b69c9962f393122bd9e8e"
+    },
+    {
+      "file": "logo-mark.png",
+      "width": 512,
+      "height": 512,
+      "format": "png",
+      "bytes": 56818,
+      "transparent": true,
+      "source": "proposedlogo.png",
+      "sha256": "902906710b75cd245079bd27cba49dcb894cb0b785ca11742acfa6443b9519d6"
+    },
+    {
+      "file": "favicon.svg",
+      "width": 512,
+      "height": 512,
+      "format": "svg",
+      "bytes": 3681,
+      "transparent": true,
+      "source": "proposedlogo.png",
+      "sha256": "8e1625514c0e2f49f261b17379275d98df5c7349292410fb138fa52fe648ea29"
+    },
+    {
+      "file": "favicon-32.png",
+      "width": 32,
+      "height": 32,
+      "format": "png",
+      "bytes": 860,
+      "transparent": true,
+      "source": "proposedlogo.png",
+      "sha256": "4ded7c0d74ce1f088e490d751420358e5d5a5f7e1943128a8575248b8b8ca03b"
+    },
+    {
+      "file": "favicon.ico",
+      "format": "ico",
+      "sizes": [
+        16,
+        32,
+        48
+      ],
+      "bytes": 2597,
+      "transparent": true,
+      "source": "proposedlogo.png",
+      "sha256": "f6fb020e5add5132d8a2e0248b9e61f4457ef8c0084e64ddfbcce1eaadc11852"
+    },
+    {
+      "file": "empty-all-clear.webp",
+      "width": 480,
+      "height": 360,
+      "format": "webp",
+      "bytes": 5250,
+      "quality": 80,
+      "sha256": "f4df27c637f4889ffae6cbe6f1be79a04add729551de5f9edfb01562d753d0fe"
+    },
+    {
+      "file": "empty-waiting-for-call.webp",
+      "width": 480,
+      "height": 360,
+      "format": "webp",
+      "bytes": 1760,
+      "quality": 80,
+      "sha256": "a7b89b7510f7981beb2d1c1108df55527d67e590aa9d2c565376cd3c821be290"
+    },
+    {
+      "file": "sign-in.webp",
+      "width": 1600,
+      "height": 1000,
+      "format": "webp",
+      "bytes": 28232,
+      "quality": 80,
+      "sha256": "1d911ea63f44a8b5a3ad110e20c51c86f6b3540957ed370481828a78274cf2a2"
+    },
+    {
+      "file": "mesh-insight.webp",
+      "width": 1920,
+      "height": 1080,
+      "format": "webp",
+      "bytes": 7262,
+      "quality": 80,
+      "sha256": "1559fc6f6f7b7642f3004bf58de421901b8eddafa1b977e89892c9ac329982fa"
+    },
+    {
+      "file": "mesh-calm.webp",
+      "width": 1200,
+      "height": 800,
+      "format": "webp",
+      "bytes": 3232,
+      "quality": 80,
+      "sha256": "57d68db0ba8c0aa8c53aaeb5d8c4b6f832b6ceb6efa7349f90190d8b87019854"
+    },
+    {
+      "file": "mesh-attention.webp",
+      "width": 1200,
+      "height": 800,
+      "format": "webp",
+      "bytes": 3134,
+      "quality": 80,
+      "sha256": "3fde4a5c4161d48c0d52545e521a7cd324924e3c3809b1eb3cf57f5714ad2faa"
+    },
+    {
+      "file": "apple-touch-icon.png",
+      "width": 180,
+      "height": 180,
+      "format": "png",
+      "bytes": 1960,
+      "transparent": false,
+      "source": "logo-mark.svg",
+      "sha256": "6c35fcd8a551eca0eea86a1ca278f49216e5d0e16871ac7c72338e55209918bb"
+    },
+    {
+      "file": "icon-192.png",
+      "width": 192,
+      "height": 192,
+      "format": "png",
+      "bytes": 2013,
+      "transparent": false,
+      "source": "logo-mark.svg",
+      "sha256": "864849f864ec34b00f4cc0ac7e2e925eb68d11c32cc931c8acae2b96726a8e30"
+    },
+    {
+      "file": "icon-512.png",
+      "width": 512,
+      "height": 512,
+      "format": "png",
+      "bytes": 5661,
+      "transparent": false,
+      "source": "logo-mark.svg",
+      "sha256": "9bd78612a3042f3b71085703c4be567680c098a2cf8b4fffd354e368f88f18ab"
+    },
+    {
+      "file": "social-preview.png",
+      "width": 1200,
+      "height": 630,
+      "format": "png",
+      "bytes": 38069,
+      "transparent": false,
+      "source": [
+        "mesh-insight.webp",
+        "logo-mark.svg"
+      ],
+      "sha256": "1e9532c6b5b0f4057a133870918a876025bfd95ac26a592fed8f99abdd1d2486"
+    },
+    {
+      "file": "social-preview.webp",
+      "width": 1200,
+      "height": 630,
+      "format": "webp",
+      "bytes": 7548,
+      "transparent": false,
+      "source": [
+        "mesh-insight.webp",
+        "logo-mark.svg"
+      ],
+      "quality": 80,
+      "sha256": "4a83b0316fc5322f3722396a66b8b23995eb77434218fd48e6c25e324cb820f7"
+    },
+    {
+      "file": "opengraph-optimized.png",
+      "width": 1200,
+      "height": 630,
+      "format": "png",
+      "bytes": 545623,
+      "transparent": false,
+      "source": "opengraph.png",
+      "sha256": "1cf77efc1784f8c74d684348ce3c88d3eae589b3d7f62807b972e55f37e555b0"
+    },
+    {
+      "file": "opengraph-optimized.webp",
+      "width": 1200,
+      "height": 630,
+      "format": "webp",
+      "bytes": 51588,
+      "transparent": false,
+      "source": "opengraph.png",
+      "sha256": "b348cba93c7568302c3592a7ca7e71043536049cd9fc17e457b1140e7586f155",
+      "quality": 90
+    }
+  ],
+  "logoSource": {
+    "file": "proposedlogo.png",
+    "providedBy": "user",
+    "width": 1254,
+    "height": 1254,
+    "sha256": "63c460e76c1f7b1d04269e91e4c481f8c9f05f0a4a5a3ba3a208697765c7b1fa"
+  },
+  "openGraphSource": {
+    "file": "opengraph.png",
+    "width": 1731,
+    "height": 909,
+    "bytes": 1024043,
+    "sha256": "d2aba91d43c465b9af10b5c8343fa2fd03c935ec6b6c6aefe24bc452d18e1cca",
+    "providedBy": "user",
+    "preserved": true
+  }
+}

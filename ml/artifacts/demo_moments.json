@@ -1,0 +1,212 @@
+{
+ "scenario_id": "demo_v1",
+ "horizon_days": 21,
+ "tuned_threshold": 0.3,
+ "first_red": {
+  "unit_id": "HIN-02",
+  "station_code": "HIN",
+  "station": "Hinton",
+  "source_engine": 22,
+  "start_offset": 151,
+  "day_by_threshold": {
+   "0.30": 29,
+   "0.35": 29,
+   "0.40": 29,
+   "0.45": 29,
+   "0.50": 29,
+   "0.55": 29,
+   "0.60": 29
+  },
+  "true_days_left_at_threshold_0.50": 22
+ },
+ "later_red": [
+  {
+   "unit_id": "WHT-19",
+   "day_at_threshold_0.50": 52
+  },
+  {
+   "unit_id": "HIN-03",
+   "day_at_threshold_0.50": 64
+  },
+  {
+   "unit_id": "GPR-20",
+   "day_at_threshold_0.50": 78
+  },
+  {
+   "unit_id": "EDS-19",
+   "day_at_threshold_0.50": 92
+  },
+  {
+   "unit_id": "HIN-15",
+   "day_at_threshold_0.50": 108
+  },
+  {
+   "unit_id": "WHT-02",
+   "day_at_threshold_0.50": 124
+  },
+  {
+   "unit_id": "HIN-09",
+   "day_at_threshold_0.50": 142
+  },
+  {
+   "unit_id": "WHT-13",
+   "day_at_threshold_0.50": 160
+  }
+ ],
+ "planted_fault": {
+  "unit_id": "EDS-02",
+  "sensor": "s4",
+  "type": "stuck",
+  "start_day": 33,
+  "sensor_label": "Low-pressure turbine outlet temperature"
+ },
+ "validation_live_replay": {
+  "0.30": {
+   "first_red": [
+    [
+     "HIN-02",
+     29
+    ],
+    [
+     "GPR-05",
+     45
+    ],
+    [
+     "WHT-17",
+     46
+    ]
+   ],
+   "first_day": 29,
+   "in_window": true,
+   "red_by_day_60": 9,
+   "fault_flagged_day": 35,
+   "fault_unit_red": false
+  },
+  "0.35": {
+   "first_red": [
+    [
+     "HIN-02",
+     29
+    ],
+    [
+     "GPR-05",
+     45
+    ],
+    [
+     "WHT-17",
+     47
+    ]
+   ],
+   "first_day": 29,
+   "in_window": true,
+   "red_by_day_60": 8,
+   "fault_flagged_day": 35,
+   "fault_unit_red": false
+  },
+  "0.40": {
+   "first_red": [
+    [
+     "HIN-02",
+     29
+    ],
+    [
+     "GPR-05",
+     45
+    ],
+    [
+     "WHT-17",
+     47
+    ]
+   ],
+   "first_day": 29,
+   "in_window": true,
+   "red_by_day_60": 7,
+   "fault_flagged_day": 35,
+   "fault_unit_red": false
+  },
+  "0.45": {
+   "first_red": [
+    [
+     "HIN-02",
+     29
+    ],
+    [
+     "GPR-05",
+     45
+    ],
+    [
+     "WHT-17",
+     47
+    ]
+   ],
+   "first_day": 29,
+   "in_window": true,
+   "red_by_day_60": 7,
+   "fault_flagged_day": 35,
+   "fault_unit_red": false
+  },
+  "0.50": {
+   "first_red": [
+    [
+     "HIN-02",
+     29
+    ],
+    [
+     "GPR-05",
+     45
+    ],
+    [
+     "WHT-17",
+     48
+    ]
+   ],
+   "first_day": 29,
+   "in_window": true,
+   "red_by_day_60": 7,
+   "fault_flagged_day": 35,
+   "fault_unit_red": false
+  },
+  "0.55": {
+   "first_red": [
+    [
+     "HIN-02",
+     29
+    ],
+    [
+     "WHT-17",
+     48
+    ],
+    [
+     "GPR-05",
+     49
+    ]
+   ],
+   "first_day": 29,
+   "in_window": true,
+   "red_by_day_60": 7,
+   "fault_flagged_day": 35,
+   "fault_unit_red": false
+  },
+  "0.60": {
+   "first_red": [
+    [
+     "HIN-02",
+     29
+    ],
+    [
+     "GPR-05",
+     50
+    ],
+    [
+     "WHT-17",
+     50
+    ]
+   ],
+   "first_day": 29,
+   "in_window": true,
+   "red_by_day_60": 6,
+   "fault_flagged_day": 35,
+   "fault_unit_red": false
+  }
+ }
+}

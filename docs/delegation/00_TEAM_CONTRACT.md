@@ -19,7 +19,7 @@
 ## 1. Ground rules
 
 1. **Major on the major.** Never cut: the model before/after, the live replay and Impact tab, one voice call that changes the plan. Polish is last.
-2. **Feature freeze: Saturday 7:00 PM MT.** After that, fixes only. Agent config, scenario and model artifacts are frozen too.
+2. **No feature freeze.** We keep building until the real deadlines: **Sunday 11:00 AM MT internal submission target, 12:00 PM hard stop**. Re-test (evals, tests) after any change to the agent, scenario or model.
 3. **Submit by Sunday 11:00 AM MT.** The hard cut-off is 12:00 PM. No exceptions.
 4. **One repo, three lanes.** You only edit files in your own lane. If you need a change in someone else's lane, message them, do not edit it.
 5. **Shared files need an ack.** These files are shared: `core/contracts.py`, `core/models.py`, `infra/docker-compose.yml`, `.env.example`, and this folder. A change to them needs a thumbs-up from the other two before merge.
@@ -64,7 +64,8 @@
 | Verdict | `confirmed_wear`, `looks_fine`, `part_replaced` |
 | Plan item `state` | `planned`, `done`, `blocked`, `needs_manager_decision` |
 | Call request `state` | `ringing`, `answered`, `missed`, `escalated`, `done` |
-| Event `type` | `status_change`, `sensor_issue`, `call_requested`, `call_answered`, `constraint_added`, `plan_changed`, `call_summary`, `feedback_received`, `threshold_adjusted`, `failure`, `manager_alert` |
+| Plan item `approval` | `proposed`, `approved` (optional; if absent the dashboard hides the approval step) |
+| Event `type` | `status_change`, `sensor_issue`, `call_requested`, `call_answered`, `constraint_added`, `plan_changed`, `call_summary`, `plan_approved`, `manager_decision`, `feedback_received`, `threshold_adjusted`, `failure`, `manager_alert` |
 | Policy | `run_to_failure`, `fixed_schedule`, `pipeguard` |
 
 ### Decisions this contract makes (flag if you disagree, the default stands)
@@ -150,7 +151,9 @@ Endpoints are listed in `techstack.md` section 11. The JSON shapes below are the
 
 **Unit detail** (`GET /api/units/{unit_id}`): the fleet unit fields plus `history` (one point per day: `sim_day`, `rul_low`, `rul_likely`, `rul_high`, `p_fail`), `sensors` (last 60 days for the top 3 drifting sensors: `{sensor, label, points: [{sim_day, value}]}`), `events`, `calls`, `quality_flags`.
 
-**Plan item** (`GET /api/plan`): `{id, unit_id, station_code, planned_day, planned_date, technician_id, technician_name, expected_saving, reason, state}`.
+**Call record** (each item in `calls`): `{id, call_request_id, unit_id, technician_id, technician_name, conversation_id, language, transcript, summary, summary_en, duration_secs, received_via, data_collection, evaluation}`. `transcript` is the ElevenLabs `data.transcript[]` **stored unmodified** (each turn may carry `tool_calls`, `tool_results`, `triggered_guardrails`). `evaluation` is `[{criteria_id, result: success|failure|unknown, rationale}]` or `null`. Consumers must ignore unknown fields. Shapes: `web/src/lib/types.ts`.
+
+**Plan item** (`GET /api/plan`): `{id, unit_id, station_code, planned_day, planned_date, technician_id, technician_name, expected_saving, reason, state, approval}`. `POST /api/plan/{id}/approve` (idempotent, returns the item) and `POST /api/plan/approve-all` (returns `{approved: n}`) set `approval` to `approved`; `submit_availability` sets it to `proposed` only when the day actually changes. Each approval writes one `plan_approved` event. For `state = needs_manager_decision` items, `POST /api/plan/{id}/decide` with `{choice: overtime|defer}` (422/404/409 on bad input; idempotent) sets the optional `decision` field (`overtime` books it tomorrow, approved; `deferred` accepts the risk, stays off the schedule and CSV), clears the unit's `needs_manager_decision` flag, and writes one `manager_decision` event. Work-orders CSV contains approved items only.
 
 **Event / SSE message** (`GET /api/stream`, `GET /api/events`)
 ```json
@@ -203,7 +206,7 @@ All dynamic variables are **strings**.
 | ElevenLabs agent id, agent config export, webhook secret | Ebube | `.env` on the server |
 | `infra/recorded_call.json` (a real successful call) | Ebube | `/api/admin/simulate-call` replays it |
 | A list of what the dashboard needs that is missing from the API | Ebube | Raise it early, not at 6 PM |
-| What the Impact tab needs from the simulation (extra metrics) | Olise | Before the freeze |
+| What the Impact tab needs from the simulation (extra metrics) | Olise | As early as possible |
 | The pitch's numbers wishlist | Olise | Headline number, test metrics, before/after |
 
 ---
@@ -218,7 +221,7 @@ All times Mountain Time. Today is Saturday, October 3. Adjust the early slots to
 | **First 90 min** | v0 model, `oof_predictions.parquet`, `scenario.json` v0 | Simulator streaming from the scenario into `readings`; API with fixtures | Fleet page against fixtures; first agent test call |
 | **12:00 PM checkpoint** | Engine predicting live (fold models) | Fleet endpoint on real predictions, SSE working | Fleet page showing live predictions; `/field` rings and connects |
 | **Afternoon** | Scheduler, simulation, tuning, quality checks, feedback | Tool endpoints, webhook, call state machine, guardrails, test mode, admin reset | Impact tab, decision log, Test mode, LLM test (12.10), recorded call |
-| **7:00 PM FEATURE FREEZE** | Numbers only | Polish and deploy | Draft deck, freeze agent config |
+| **Sat evening (no freeze)** | Keep integrating | Polish and deploy | Draft deck, export agent config backup |
 | **Saturday night** | Help debug; final metrics | Deploy to server, test the laptop fallback | Full demo run with a real call; ElevenLabs usage check |
 | **Sunday 8 to 10 AM** | All: 2 or 3 timed rehearsals, record the backup video, screenshots | | |
 | **Sunday 11:00 AM** | **Submit the GitHub Issue** | | |

@@ -20,7 +20,7 @@ Repo: https://github.com/duvtant/pipeguard. Branches: `olise/...`.
 | 5 | `core/quality.py`, `risk.py`, `explain.py`, `scheduler.py` | Sat afternoon | Ebube (API calls the scheduler on re-plan) |
 | 6 | `core/simulate.py`, `ml/tune.py` (Impact tab) | Sat afternoon | David (Impact tab), Ebube (`/api/simulate`) |
 | 7 | `core/feedback.py` | Sat afternoon | Ebube |
-| 8 | Final scenario (`ml/make_scenario.py`), fallback predictions, headline number | Sat 7 PM freeze | Everyone |
+| 8 | Final scenario (`ml/make_scenario.py`), fallback predictions, headline number | As early as possible (no freeze; the real deadline is Sun 11 AM) | Everyone |
 
 **v0 first.** A rough model and a rough scenario in 90 minutes beat a perfect one at 5 PM. The other two are blocked on your files.
 

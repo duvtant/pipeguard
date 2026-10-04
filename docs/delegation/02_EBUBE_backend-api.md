@@ -4,6 +4,8 @@
 
 This is 20% of the score (Execution & Software Architecture) and it decides whether the demo is reliable (part of the 15% for Presentation & Demo Quality). If your layer is solid, nobody else's work fails on stage.
 
+**Extra items the dashboard uses (all optional):** see `MESSAGE_TO_EBUBE.md`, the single living list (plan approval, manager decision, full call record, policy checks, settings, small chart endpoints). The dashboard is already built for them and hides each one if the API doesn't send it.
+
 **Read first:** `00_TEAM_CONTRACT.md`, then this file, then `docs/techstack.md` sections 4, 8, 9, 10, 11, 12.6, 12.7, 14, 15 and 16.
 Repo: https://github.com/duvtant/pipeguard. Branches: `ebube/...`.
 
@@ -165,7 +167,7 @@ Commit one JSON fixture per endpoint (`api/fixtures/`), realistic and complete (
      - Use `dateparser` with `settings={"RELATIVE_BASE": <sim date>, "PREFER_DATES_FROM": "future"}` and `languages=["en", "fr"]`, after your own small pre-parser for weekday phrases (the library's weekday behaviour is easy to get subtly wrong). Write a table-driven test with at least 20 phrases in both languages.
      - A day in the past becomes today. A phrase that cannot be resolved returns `ok:false` with "Which day can you do?". Vague input ("sometime next week maybe") is also `ok:false`.
   3. Insert the `constraints` row (`source = voice`), write a `constraint_added` event.
-  4. Take the plan advisory lock (`pg_advisory_xact_lock`), load the latest predictions, call `core.scheduler.build_plan(...)` (Olise's), write the plan diff to `plan_items`, write the `plan_changed` event, commit, `NOTIFY ui_event`.
+  4. Take the plan advisory lock (`pg_advisory_xact_lock`), load the latest predictions, call `core.scheduler.build_plan(...)` (Olise's), write the plan diff to `plan_items`, set `approval = 'proposed'` on any item whose day actually changed (an unchanged item keeps its approval, so repeating the call never un-approves it), write the `plan_changed` event, commit, `NOTIFY ui_event`.
   5. Build the `say` sentence from the scheduler's `changes` ("Got it. Unit 14 moves to Friday, and Unit 9 takes Thursday's slot."). If the scheduler marks the unit `needs_manager_decision` (the technician is free only after the unit may already have failed) say so honestly and create a `manager_alert` event.
 - **`unit-status`:** current range, reason and plan for a unit, in two short sentences. **`field-report`:** store the note, add an event, set the unit's inspection note. **`feedback`:** call Olise's `adjust_threshold`, persist the new threshold in `engine_params`, write `feedback_received` and `threshold_adjusted` events; `part_replaced` resets the unit (new `life_start_day`, simulator restarts it from cycle 1).
 - **Fallback when a tool call fails mid-call:** the webhook's data collection (`available_day`, `verdict`) is applied after the call and marked `received_via = webhook_fallback`.
@@ -176,14 +178,14 @@ Commit one JSON fixture per endpoint (`api/fixtures/`), realistic and complete (
 - **Respond 200 quickly** and do the work in a background task. ElevenLabs auto-disables a webhook after 10 or more consecutive failures with no success in 7 days.
 - **Idempotent** on `conversation_id` (webhooks can be retried): upsert the `calls` row.
 - Link the call to its request with `call_request_id` from `data.conversation_initiation_client_data.dynamic_variables` (preferred), falling back to the conversation id you stored at `answer` time.
-- Store `transcript`, `summary` (`analysis.transcript_summary`), `data_collection` (`analysis.data_collection_results`), `duration_secs`, `language`, and set `received_via`. Expose `summary_en` to the dashboard as `data_collection.english_summary` when present, otherwise the plain summary (French calls need the English one).
+- Store `transcript` **exactly as sent** (JSON, do not pick fields out: it holds `tool_calls`, `tool_results`, `triggered_guardrails`), `evaluation` (`analysis.evaluation_criteria_results_list`, or `evaluation_criteria_results`, as `[{criteria_id, result, rationale}]`; `null` if absent), `summary` (`analysis.transcript_summary`), `data_collection` (`analysis.data_collection_results`), `duration_secs`, `language`, and set `received_via`. Never reject a webhook for a missing or unknown field. Expose `summary_en` to the dashboard as `data_collection.english_summary` when present, otherwise the plain summary (French calls need the English one).
 - Write a `call_summary` event so the decision log shows it, then `NOTIFY ui_event`.
 - **Pull fallback:** if no webhook arrives within 60 seconds of the call ending (a database-backed timer, see 9), fetch `GET https://api.elevenlabs.io/v1/convai/conversations/{conversation_id}` and run the same storing code, `received_via = pull`.
 
 ### 8.7 Other endpoints
 - **`/api/simulate`:** call Olise's `core.simulate` in-process. Load `oof_predictions.parquet` once at startup and keep it in memory. Run it in the thread pool, cap concurrent runs, and return `computed_ms`. Target under 1 second (David debounces the sliders).
 - **`/api/impact`:** cache the last result and the headline.
-- **`/api/work-orders.csv`:** this week's plan, UTF-8 with BOM so Excel opens it cleanly, `Content-Disposition: attachment; filename="work_orders_day_<N>.csv"`; columns: date, station, unit, technician, expected saving, reason.
+- **`/api/work-orders.csv`:** this week's plan, UTF-8 with BOM so Excel opens it cleanly, `Content-Disposition: attachment; filename="work_orders_day_<N>.csv"`; columns: date, station, unit, technician, expected saving, reason. **Approved items only** (see `MESSAGE_TO_EBUBE.md`).
 - **Test mode:** `POST /api/testmode/faults`, `DELETE /api/testmode/faults/{id}` with `X-Admin-Token`. Validate unit and sensor.
 - **Admin:** `POST /api/admin/reset`, `POST /api/admin/simulate-call`, `POST /api/admin/tune` (calls `ml/tune`, stores the result in `engine_params`). All need `X-Admin-Token`.
 - **`/api/health`:** database reachable, last simulator tick age, last engine tick age, model version, `data_source` mix, ElevenLabs configured, webhook secret set. David and the preflight script read it.

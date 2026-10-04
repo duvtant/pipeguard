@@ -353,7 +353,8 @@ The handbook asks for responsible, transparent agent design and attention to alg
 - **Dataset:** NASA C-MAPSS FD001, bundled in the [hackathon repository](https://github.com/nagusubra/industry-hackathon-lab). A. Saxena, K. Goebel, D. Simon, N. Eklund, "Damage Propagation Modeling for Aircraft Engine Run-to-Failure Simulation," *International Conference on Prognostics and Health Management (PHM)*, 2008.
 - **Voice:** [ElevenLabs](https://elevenlabs.io) Agents (hackathon sponsor technology).
 - **Context:** [GE LM2500 aeroderivative gas turbine](https://en.wikipedia.org/wiki/General_Electric_LM2500); [Rolls-Royce RB211 gas compression packages for a Canadian pipeline](https://www.rolls-royce.com/media/press-releases-archive/yr-2007/rr-rb211-gas.aspx).
-- **Reused starter code:** [FILL: none, or cite it].
+- **Roster photos:** the twelve technician headshots are AI-generated images of fictional people (no real person is depicted). Prompts are in `docs/design/ROSTER_HEADSHOTS.md`.
+- **Reused code:** eight interaction components (slide-over, value flash, action button, hold to confirm, skeleton timing, new-events pill, segmented control, snap-point slider) were adapted from [interior.dev](https://www.interior.dev/) (MIT, copyright 2026 ozzy). Each adapted file names its original, and the licence text is in [`docs/design/vendor/interior/LICENSE`](docs/design/vendor/interior/LICENSE). Everything else was written for this project.
 - **Judging rubric:** [JUDGING_RUBRIC.md](https://github.com/nagusubra/industry-hackathon-lab/blob/main/JUDGING_RUBRIC.md).
 
 **Further reading:** [`docs/PipeGuard_Overview.md`](docs/PipeGuard_Overview.md) (product, pitch, business case) · [`docs/techstack.md`](docs/techstack.md) (technical specification) · [`docs/delegation/`](docs/delegation/) (how the three of us split and integrated the work).
