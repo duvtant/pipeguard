@@ -235,13 +235,13 @@
  "tuned": {
   "threshold": 0.3,
   "horizon_days": 21,
-  "tuned_at": "2026-10-03T15:55:20+00:00"
+  "tuned_at": "2026-10-04T02:37:21+00:00"
  },
  "tuning": {
   "threshold": 0.3,
   "horizon_days": 21,
   "total_cost": 4120000.0,
-  "tuned_at": "2026-10-03T15:55:20+00:00",
+  "tuned_at": "2026-10-04T02:37:21+00:00",
   "inputs": {
    "crews_per_station": 2,
    "cost_breakdown": 200000,
