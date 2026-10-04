@@ -9,6 +9,16 @@ Team: **Team Ace** · Olisemelie David, ML engine ([@mrazuka](https://github.com
 
 > **Disclosure up front.** Prairie Gas Transmission, its technicians and every dollar figure are **simulated**. Turbine data is the public **NASA C-MAPSS FD001** turbofan dataset, used as a stand-in because operators do not publish turbine sensor data. We never claim it is pipeline data. See [Limits](#10-honest-limits).
 
+## At a glance
+
+- **Problem.** A pipeline compressor turbine wears out silently and then fails suddenly. Operators service on a calendar or after the breakdown, so they either waste crew time or lose gas flow.
+- **What PipeGuard does.** Watches 100 turbines at 5 stations, predicts remaining life as a range, explains why, plans the week within crew limits, **phones the on-call technician by voice**, and re-plans from their spoken answer. A manager approves every work order. It is read-only and never sends a command to a machine.
+- **Proof (simulation, NASA C-MAPSS FD001 as a stand-in).** Prediction error 14.3 against 34.9 for the starter-style baseline on NASA's official test set. In a simulated year it would have caught **96 of 100 failures at least 14 days early** with 0 false alarms, at **$4.12M against $6.74M** for a fixed schedule and **$36.2M** for run-to-failure (illustrative costs).
+- **Improvement round.** It tuned its own alert setting: full two-week warning went from 22 of 100 failures to 96 of 100, for about 5% more cost.
+- **Working system, not a mock-up.** FastAPI, PostgreSQL, two workers, a React dashboard and a phone page, an ElevenLabs voice agent, all deployed at https://pipeguard.blunelabs.com. 343 automated tests pass (229 backend, 55 engine, 59 dashboard).
+- **Try it in 60 seconds.** Open the live demo, press **Sign in as Maintenance Manager**, press play on the Fleet page, and watch unit **HIN-02 (Hinton)** turn red around simulated day 29. Then open **Plan**, **Decision log** and **Impact**.
+- **Honest about limits.** Data, technicians and costs are simulated; one operating condition; no customer signed yet. See [Limits](#10-honest-limits).
+
 | | |
 |---|---|
 | **Live demo** | https://pipeguard.blunelabs.com (deployed on a Hetzner server behind HTTPS; it replays a simulated fleet) |
@@ -71,7 +81,7 @@ flowchart LR
 | 3. Decide | Turns the range into a probability of failure, then picks which units to service this week by `P(fail) × breakdown cost − service cost`, within crew capacity. Units with no feasible slot are flagged *needs manager decision*, never dropped silently | `core/risk.py`, `core/scheduler.py` |
 | 4. Score | Replays the fleet and compares **run to failure**, **fixed schedule** and **PipeGuard** on breakdowns, wasted services, crew-days and dollars | `core/simulate.py` |
 | 5. Self-tune | Searches the alert threshold and horizon and keeps the cheapest, using cross-fitted predictions only | `ml/tune.py` |
-| 6. Re-plan | A technician's answer ("not before Friday") becomes a constraint and the schedule is rebuilt in under a second | `api/routers/voice.py`, `core/scheduler.py` |
+| 6. Re-plan | A technician's answer ("not before Friday") becomes a constraint and the schedule is rebuilt within about a second | `api/routers/voice.py`, `core/scheduler.py` |
 | 7. Learn | Technician verdicts (*confirmed wear*, *looks fine*, *part replaced*) move the alert threshold within bounds | `core/feedback.py` |
 
 ### Baselines (the lazy approaches we must beat)
@@ -106,7 +116,7 @@ The untuned first result caught one more failing engine (19 against 18) but its 
 | Fixed schedule (every 120 days) | 0 | 234 of 337 services | $6.74M |
 | **PipeGuard, self-tuned (the improvement round)** | 0 | 0 of 206 services | **$4.12M** |
 
-**The improvement round.** PipeGuard's default alert setting (probability 0.5, 14 days ahead) costs $3.92M but gives the full two weeks of warning for only 22 of 100 failures (median warning 11 days). Tuning the setting on cross-fitted predictions (probability 0.3, 21 days ahead) raises that to **96 of 100** (median warning 20 days) for **$200K more**, about 5%. A check that tuned on 60 engines and scored on the other 40 picked the same setting. The self-tuned run is the one reported in the first table.
+**The improvement round.** PipeGuard's default alert setting (probability 0.5, 14 days ahead) costs $3.92M but gives the full two weeks of warning for only 22 of 100 failures (median warning 11 days). Tuning the setting on cross-fitted predictions (probability 0.3, 21 days ahead) raises that to **96 of 100** (median warning 20 days) for **$200K more**, about 5%. A check that tuned on 60 engines and scored on the other 40 picked the same setting. The self-tuned run is the one in the table above.
 
 **Headline:** PipeGuard would have caught 96 of 100 failures at least 14 days early, with 0 false alarms (for 80% of units the first warning came 15 to 26 days ahead). *Definition:* **detected** = flagged at risk at least 14 days before failure; **actioned** = also serviced in time given crew capacity. We report both.
 
@@ -127,9 +137,9 @@ The untuned first result caught one more failing engine (19 against 18) but its 
 | All crews booked | Unit flagged **needs manager decision**; never fails silently |
 | Technician free only after the unit may already have failed | Honest answer on the call, manager alert in the app |
 | Alarm fatigue | Calls only for top-priority units, a daily cap per technician, no repeat call for the same unit within a window |
-| Nobody answers | Backup technician rings after 30 s, then the manager is alerted |
+| Nobody answers | Backup technician rings after 30 s (adjustable in Settings), then the manager is alerted |
 | Unclear answer on the call | The agent confirms back ("So Friday, correct?") before acting |
-| Voice service down | One-click **simulate call** replays a real recorded call through the same code path |
+| Voice service down | One-click **simulate call** replays a recorded conversation through the same code path |
 | Live inference error | Engine switches to precomputed predictions and labels them `fallback` |
 
 ---
@@ -167,7 +177,7 @@ The untuned first result caught one more failing engine (19 against 18) but its 
 4. **Architecture, decision-making and results** (60 s): one diagram, the plan → score → change loop, the before and after numbers.
 5. **Business case and close** (50 s): first customer, 100-day pilot, pricing, scaling, one closing line.
 
-**Reliability for the demo.** The scenario is deterministic: **Reset** returns the identical starting state, so every rehearsal matches the pitch. Fallbacks: a recorded-call replay, precomputed predictions, a second deployment, and a backup video.
+**Reliability for the demo.** The scenario is deterministic: **Reset** returns the identical starting state, so every rehearsal matches the pitch. Fallbacks: a recorded-conversation replay through the live code path, precomputed predictions, and a backup video.
 
 ---
 
@@ -206,7 +216,7 @@ flowchart LR
 | **FastAPI + Server-Sent Events** | Python keeps model and API in one language; SSE is one-way, simple and proxy-friendly, with polling fallback |
 | **React + Vite** | A product-grade manager dashboard and a mobile technician page from one codebase |
 | **ElevenLabs Agents** | One platform for speech-to-text, LLM, text-to-speech and turn-taking; our API is exposed to the agent as authenticated tools, so a spoken answer changes real state |
-| **Docker Compose + Caddy on a Hetzner server** | One command brings up the whole stack; Caddy gives automatic HTTPS at a stable address for the voice platform to call |
+| **Docker Compose on a Hetzner server, deployed with Dokploy** | One Compose file brings up the whole stack locally (`make up`) and on the server; Dokploy's Traefik gives automatic HTTPS at a stable address for the voice platform to call, and a push to the branch redeploys |
 | **Read-only by design** | Reads sensor data the operator already stores; never writes to control systems; humans decide |
 
 Full technical specification: [`docs/techstack.md`](docs/techstack.md). Schema, API, message flow and failure modes are all in it.
@@ -230,7 +240,7 @@ The call is not decoration: it changes decisions. A technician's answer becomes 
 | **Server tools** | Four authenticated tools the agent calls **mid-call** against our API: `submit_availability` (re-plans the week), `field_report`, `feedback`, `get_unit_status` |
 | **Signed URLs + dynamic variables** | Our server mints a short-lived signed URL per call and injects the unit, station, remaining-life range, reason and simulated date, so the agent only speaks facts we pass in |
 | **Language overrides** | Set per technician at session start (English tested; other languages are roadmap) |
-| **Data collection** | Structured extraction after the call (available day, verdict, and an **English summary** of a French call) |
+| **Data collection** | Structured extraction after the call (available day, verdict, and an English summary for the manager) |
 | **Post-call webhooks** | Transcript and analysis arrive signature-verified and are linked to the decision log; a conversation pull is the fallback if a webhook is lost |
 | **Agent testing** | A frozen text-test suite (8 critical tests run twice, held-out tests and 3 simulations), run against five candidate LLMs, chose the model ([`docs/llm_test_results.md`](docs/llm_test_results.md)) |
 | **React SDK** | The technician's phone page starts and runs the live voice session |
@@ -277,12 +287,14 @@ Voice calls need ElevenLabs credentials in `.env`. Without them, use **Test mode
 | Claim | How to check |
 |---|---|
 | Beats the baseline on NASA's test set | `make evaluate` prints the table in §3 and writes `ml/artifacts/metadata.json` |
+| 343 automated tests pass | `make test` runs the backend and engine suites (`tests/`, `ml/tests/`); `cd web && pnpm test` runs the dashboard suite |
 | Live predictions equal the cross-fitted ones | `make test` (see `ml/tests/`) |
 | No false sensor alarms on healthy data | `make test`: the quality checker raises zero flags across all 100 clean training engines |
 | Demo is deterministic | `make reset`, then replay: the same unit turns red at the same time |
 | Impact simulation is fast | `POST /api/simulate` returns `computed_ms` (target under 1 second) |
 | A spoken answer changes the plan | Test mode → Simulate call, then open Decision log: constraint → plan change → summary |
-| No secrets in the repo | `./scripts/preflight` |
+| The deployed demo is healthy and locked down | `python scripts/preflight.py --base https://pipeguard.blunelabs.com --prod` (21 checks: health, engine keeping up, admin and voice endpoints reject unauthenticated calls, unsigned webhooks refused, HTTPS redirect) |
+| No secrets in the repo | Real keys live only in the git-ignored `.env`; `.env.example` has no real values, and we scanned the full history for them |
 
 **Repository map**
 ```
@@ -292,7 +304,7 @@ simulator/   historian simulator: clock, streaming, fault injection
 api/         FastAPI: REST, live updates, voice tool endpoints, webhooks
 web/         React: manager dashboard and technician phone page
 ml/          training, evaluation, tuning, scenario generation, artifacts, tests
-infra/       Docker Compose, nginx, Caddy, seed data
+infra/       Docker Compose (local and Dokploy), nginx, optional Caddy profile, seed data, ElevenLabs agent config
 docs/        overview, technical specification, team guides, LLM test results
 ```
 
@@ -351,22 +363,22 @@ The handbook asks for responsible, transparent agent design and attention to alg
 | **Data bias and generalisation** | The training data covers one operating condition and one failure mode, so we state the limit (§10), cross-fit so the demo never scores a turbine with a model that saw it, and require **shadow-mode validation** on an operator's own data before anyone acts on a warning |
 | **Alarm fatigue** | Priority band, daily call cap per technician, no duplicate calls, backup and escalation paths |
 | **Voice agent honesty** | It speaks only the facts we inject, cannot invent numbers or engineering instructions, declines off-topic requests, and says it is an automated dispatcher assistant when asked. Calls and transcripts are stored for audit. No real person's voice is cloned |
-| **Inclusive operation** | Technicians are called in their preferred language, with an English summary for the manager |
+| **Inclusive operation** | The roster stores each technician's preferred language and the agent supports language overrides; English is what we tested, and other languages are on the roadmap |
 | **Privacy** | Public data only; the roster is fictional; secrets stay out of the repository and the browser |
 
 ## 12. Originality and attribution
 
 - All application code was written during the hackathon window (October 2 to 4, 2026); the commit history in this repository shows it. The starter-style linear baseline (27.5 average error) comes from the starter script kept in `ml/legacy/agent_starter.py`, which we reused as the named baseline; the rest of `ml/` is new.
-- Open-source building blocks: PostgreSQL, FastAPI, SQLModel, psycopg, Pydantic, LightGBM, scikit-learn, pandas, NumPy, PyArrow, React, Vite, Tailwind CSS, Recharts, TanStack Query, React Router, nginx, Docker, Caddy, and the ElevenLabs SDKs.
+- Open-source building blocks: PostgreSQL, FastAPI, SQLModel, psycopg, Pydantic, LightGBM, scikit-learn, pandas, NumPy, PyArrow, React, Vite, Tailwind CSS, Recharts, TanStack Query, React Router, nginx, Docker, Dokploy (Traefik), and the ElevenLabs SDKs.
 - Data: NASA C-MAPSS FD001 (see §14).
 
 ## 13. Team
 
 | Who | Built |
 |---|---|
-| **Olise** | ML engine: cross-fitted training, data-quality checks, prediction with ranges, explanations, risk, scheduler, simulation, self-tuning, feedback |
-| **Ebube** | Backend: database, historian simulator, FastAPI, live updates, call guardrails, deployment |
-| **David** | Dashboard, technician phone page, ElevenLabs voice agent and model test, pitch |
+| **Olisemelie David** ([@mrazuka](https://github.com/mrazuka)) | ML engine: cross-fitted training, data-quality checks, prediction with ranges, explanations, risk, scheduler, simulation, self-tuning, feedback |
+| **Ebube Okutalukwe** ([@monterovincent](https://github.com/monterovincent)) | Backend: database, historian simulator, FastAPI, live updates, call guardrails, deployment |
+| **David Oreoluwa** ([@duvtant](https://github.com/duvtant)) | Dashboard, technician phone page, ElevenLabs voice agent and model test, pitch |
 
 ## 14. Credits and citations
 
