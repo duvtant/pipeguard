@@ -1,0 +1,134 @@
+/* PipeGuard design tokens. Source of truth: docs/design/DESIGN.md (approved, Gate 1).
+   Light mode only. Projector mode is `html[data-projector="true"]` (DESIGN.md 3.4). */
+@import "@fontsource-variable/figtree";
+
+@theme {
+  --font-sans: "Figtree Variable", system-ui, sans-serif;
+
+  /* Neutrals */
+  --color-canvas: #FFFFFF;
+  --color-shell: #FAFCFE;
+  --color-pill: #F1F3F4;
+  --color-line: #E8E9F4;
+  --color-ink: #080911;
+  --color-text: #2A2C3B;
+  --color-muted: #5B5E70;
+  --color-subtle: #6A6D82;
+
+  /* Accent: periwinkle (never a status colour) */
+  --color-accent: #5367EB;
+  --color-accent-ink: #3F52D4;
+  --color-accent-soft: #EEF0FE;
+  --color-accent-line: #7C88E8;
+  --color-accent-fill: #E5E9FC;
+
+  /* Status: text/icon, tint, icon fill */
+  --color-ok: #0E7A55;   --color-ok-tint: #E6F5EF;   --color-ok-fill: #1FA37A;
+  --color-warn: #8F5600; --color-warn-tint: #FFF1D6; --color-warn-fill: #C47A00;
+  --color-risk: #B3204F; --color-risk-tint: #FCE8EF; --color-risk-fill: #D43471;
+  --color-sens: #555B70; --color-sens-tint: #EDEFF5; --color-sens-fill: #7A8197;
+  --color-fail: #20232F; --color-fail-tint: #E8E9EF;
+
+  /* Avatar pastels */
+  --color-av-sky: #CCE6F2; --color-av-lilac: #E3DDF6; --color-av-blush: #F6E0E6;
+  --color-av-mint: #D8EFE3; --color-av-sand: #FBEBCB; --color-av-teal: #CEE9EB;
+
+  /* Chart series */
+  --color-series-baseline: #B8BCCB;
+  --color-series-fixed: #7A8197;
+
+  /* Dark tooltip */
+  --color-tip: #1B1D2A;
+
+  --radius-card: 16px;
+  --radius-tile: 10px;
+  --radius-field: 12px;
+
+  --shadow-card: 0 0 0 var(--card-edge-w) var(--color-line), 0 8px 24px -12px rgba(83, 103, 235, 0.22);
+  --shadow-tile: 0 0 0 1px var(--color-line);
+  --shadow-panel: -20px 0 50px -20px rgba(8, 9, 17, 0.3);
+  --shadow-tip: 0 10px 24px -8px rgba(0, 0, 0, 0.4);
+
+  /* Z-index layers (and only these) */
+  --z-sticky: 10;
+  --z-scrim: 20;
+  --z-slideover: 30;
+  --z-toast: 40;
+  --z-dialog: 50;
+  --z-tooltip: 60;
+}
+
+:root {
+  --card-edge-w: 1px;
+  --zoom: 1;
+  --g-insight: linear-gradient(90deg, #EFEEF1 0%, #F0EFF4 40%, #F0E7E8 75%, #EFE0E5 100%);
+  --g-calm: linear-gradient(90deg, #E8F3F2 0%, #E5EFF7 40%, #E7E9FB 75%, #EBE3F8 100%);
+  --g-attn: linear-gradient(90deg, #FCEFE4 0%, #FBE7E3 45%, #F9DEE7 100%);
+
+  /* Motion (DESIGN.md 9.1) */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --dur-instant: 90ms;
+  --dur-fast: 150ms;
+  --dur-base: 240ms;
+  --dur-slow: 360ms;
+  --dur-chart: 800ms;
+  --dur-flash: 1200ms;
+
+  --chart-line-w: 2.5px;
+
+  /* Text weights. Measured against Mercury: ours read heavier and darker, so the standard weights are lighter. */
+  --w-body: 400;
+  --w-strong: 460;
+}
+
+/* Projector mode: stronger edges, darker secondary text, heavier chart lines. The pale originals wash out. */
+html[data-projector="true"] {
+  --color-line: #C6C9E2;
+  --color-muted: #444859;
+  --color-subtle: #525669;
+  --color-accent-line: #5367EB;
+  --card-edge-w: 1.5px;
+  --zoom: 1.2;   /* projector mode scales the manager UI up; the compact size is for a laptop */
+  --chart-line-w: 3.5px;
+  --w-body: 440;   /* the pale originals wash out on a projector */
+  --w-strong: 500;
+}
+
+html { font-family: var(--font-sans); font-weight: var(--w-body); color: var(--color-text); background: var(--color-canvas); }
+body { margin: 0; font-size: 14px; line-height: 20px; -webkit-font-smoothing: antialiased; }
+/* Tabular figures everywhere a number can change, so values never jitter. */
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* Visible focus on every interactive element: 2px accent, 2px offset (DESIGN.md 10). */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Charts: line weight follows projector mode. Recharts sets stroke-width as an attribute; CSS wins. */
+.pg-chart .recharts-area-curve { stroke-width: var(--chart-line-w); stroke-linejoin: round; }
+.pg-chart .recharts-wrapper, .pg-chart svg { outline: none; }
+
+/* Phone page: the incoming-call rings are the only decorative loop in the product (DESIGN.md 9.4). */
+@keyframes pg-ring { from { transform: scale(1); opacity: 0.35; } to { transform: scale(1.6); opacity: 0; } }
+.pg-ring { animation: pg-ring 1.6s var(--ease-out) infinite; }
+.pg-ring.d2 { animation-delay: 0.8s; }
+@keyframes pg-bar { 0%, 100% { transform: scaleY(0.35); } 50% { transform: scaleY(1); } }
+.pg-bar { transform-origin: center; animation: pg-bar 0.9s var(--ease-out) infinite; }
+.pg-bar:nth-child(2) { animation-delay: 0.15s; } .pg-bar:nth-child(3) { animation-delay: 0.3s; }
+.pg-bars.idle .pg-bar { animation: none; transform: scaleY(0.35); }
+@media (prefers-reduced-motion: reduce) {
+  .pg-ring { animation: none !important; opacity: 0.3; transform: scale(1.25); }
+  .pg-bar { animation: none !important; transform: scaleY(0.7); }
+}
+
+/* A unit tile whose status just changed: one accent ring that fades out over 1.2 s (plays once, never loops). */
+@keyframes pg-flash { from { box-shadow: 0 0 0 3px rgba(83, 103, 235, 0.6); } to { box-shadow: 0 0 0 3px rgba(83, 103, 235, 0); } }
+.pg-flash { animation: pg-flash 1.2s var(--ease-out) 1 both; }
+@media (prefers-reduced-motion: reduce) { .pg-flash { animation: none !important; } }

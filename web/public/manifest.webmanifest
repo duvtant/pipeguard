@@ -1,0 +1,13 @@
+{
+  "name": "PipeGuard",
+  "short_name": "PipeGuard",
+  "description": "Predictive maintenance for gas compressor stations, with a voice agent that replans the work.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#5367EB",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
