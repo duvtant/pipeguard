@@ -1,0 +1,87 @@
+# PipeGuard on Dokploy: ONE Compose service that runs the whole stack (db, api, engine, simulator, web).
+# Use this file instead of infra/docker-compose.yml when Dokploy owns the public address. Differences:
+#   - no Caddy: Dokploy's Traefik terminates HTTPS (set the domain in the Dokploy Domains tab: service `web`, port 80)
+#   - no published host ports (nothing can collide with the other apps on the server)
+#   - every setting is passed explicitly with ${VAR} from the Environment tab (Dokploy does not inject .env into containers by itself)
+#   - only `web` joins dokploy-network; db, api, engine and simulator stay on the private project network
+# Dokploy settings: Source = Git, branch `dev`, Compose Path = ./infra/docker-compose.dokploy.yml, Compose Type = Docker Compose.
+name: pipeguard
+
+x-python: &python
+  build:
+    context: ..
+    dockerfile: infra/Dockerfile.python
+  environment: &pyenv
+    DATABASE_URL: postgresql+psycopg://pipeguard:${POSTGRES_PASSWORD:-pipeguard}@db:5432/pipeguard
+    MODEL_DIR: /app/ml/artifacts
+    SCENARIO_PATH: /app/infra/scenario.json
+    MOCK_API: "0"
+    ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
+    ELEVENLABS_AGENT_ID: ${ELEVENLABS_AGENT_ID:-}
+    ELEVENLABS_WEBHOOK_SECRET: ${ELEVENLABS_WEBHOOK_SECRET:-}
+    ELEVENLABS_ENVIRONMENT: ${ELEVENLABS_ENVIRONMENT:-production}
+    VOICE_TOOL_SECRET: ${VOICE_TOOL_SECRET:-}
+    ADMIN_TOKEN: ${ADMIN_TOKEN:-}
+    PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://pipeguard.blunelabs.com}
+    DOMAIN: ${DOMAIN:-pipeguard.blunelabs.com}
+  restart: unless-stopped
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: pipeguard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pipeguard}
+      POSTGRES_DB: pipeguard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pipeguard -d pipeguard"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  api:
+    <<: *python
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000   # ONE worker on purpose (in-process SSE fan-out)
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  engine:
+    <<: *python
+    command: python -m engine.worker
+
+  simulator:
+    <<: *python
+    command: python -m simulator.worker
+
+  # Serves the dashboard and proxies /api (including the live streams) to the api container.
+  web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+    depends_on:
+      # service_started, NOT service_healthy: on a brand-new server the database is empty, so the api reports "degraded" (unhealthy)
+      # until the first seed. Waiting for healthy would stop the whole stack from ever starting. Seed once with
+      # POST /api/clock {"action":"reset"} (see docs/DEPLOY_DOKPLOY.md).
+      api:
+        condition: service_started
+    networks:
+      - default
+      - dokploy-network
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+
+networks:
+  dokploy-network:
+    external: true

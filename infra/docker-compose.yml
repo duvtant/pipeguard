@@ -63,8 +63,9 @@ services:
     ports:
       - "127.0.0.1:${WEB_PORT:-8088}:80"
     depends_on:
+      # service_started: on an empty database the api is "degraded" until the first seed, so waiting for healthy would block this container forever
       api:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
   # Public HTTPS. Caddy listens on 80/443, gets and renews the Let's Encrypt certificate by itself,
