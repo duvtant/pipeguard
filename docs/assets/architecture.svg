@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1680 940" width="1680" height="940" font-family="Figtree, 'Helvetica Neue', Arial, sans-serif">
+<defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#5367EB"/></marker></defs>
+<rect width="1680" height="940" fill="#FFFFFF"/>
+<text x="40" y="56" font-size="38" font-weight="700" fill="#0B0D1F">How PipeGuard works</text>
+<text x="40" y="88" font-size="20" fill="#5B6076">Data in, a decision out, improved by the system itself, with a person in charge. Read-only: it never sends a command to a machine.</text>
+<rect x="40" y="130" width="300" height="120" rx="16" fill="#FFFFFF" stroke="#D9DCEB" stroke-width="2"/>
+<text x="58" y="164" font-size="24" font-weight="600" fill="#0B0D1F">Turbine sensor data</text>
+<text x="58" y="192" font-size="18" fill="#5B6076">NASA C-MAPSS FD001</text>
+<text x="58" y="214" font-size="18" fill="#5B6076">(stand-in for a historian)</text>
+<rect x="40" y="300" width="300" height="120" rx="16" fill="#FFFFFF" stroke="#D9DCEB" stroke-width="2"/>
+<text x="58" y="334" font-size="24" font-weight="600" fill="#0B0D1F">Historian simulator</text>
+<text x="58" y="362" font-size="18" fill="#5B6076">replay clock, 1 day per second</text>
+<text x="58" y="384" font-size="18" fill="#5B6076">fault injection (dead sensor)</text>
+<path d="M190 250 L190 300" stroke="#5367EB" stroke-width="3" fill="none" marker-end="url(#a)"/>
+<rect x="400" y="130" width="250" height="640" rx="16" fill="#EEF0FD" stroke="#5367EB" stroke-width="2"/>
+<text x="418" y="164" font-size="24" font-weight="600" fill="#0B0D1F">PostgreSQL</text>
+<text x="418" y="192" font-size="18" fill="#5B6076">single source of truth</text>
+<text x="418" y="214" font-size="18" fill="#5B6076"></text>
+<text x="418" y="236" font-size="18" fill="#5B6076">readings</text>
+<text x="418" y="258" font-size="18" fill="#5B6076">predictions</text>
+<text x="418" y="280" font-size="18" fill="#5B6076">plan and approvals</text>
+<text x="418" y="302" font-size="18" fill="#5B6076">calls and transcripts</text>
+<text x="418" y="324" font-size="18" fill="#5B6076">events</text>
+<text x="418" y="346" font-size="18" fill="#5B6076">settings</text>
+<path d="M340 360 L400 360" stroke="#5367EB" stroke-width="3" fill="none" marker-end="url(#a)"/>
+<circle cx="370" cy="330" r="17" fill="#5367EB"/><text x="370" y="337" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">1</text>
+<rect x="710" y="120" width="360" height="640" rx="18" fill="#FFFFFF" stroke="#5367EB" stroke-width="2.5"/>
+<text x="730" y="156" font-size="24" font-weight="700" fill="#5367EB">Engine (decides on its own)</text>
+<rect x="730" y="180" width="320" height="94" rx="14" fill="#EEF0FD" stroke="#D9DCEB" stroke-width="1.5"/>
+<text x="750" y="216" font-size="21" font-weight="600" fill="#0B0D1F">1. Check data quality</text><text x="750" y="246" font-size="17" fill="#5B6076">dead, stuck, spike, out of range</text>
+<path d="M890 274 L890 294" stroke="#5367EB" stroke-width="3" marker-end="url(#a)"/>
+<rect x="730" y="294" width="320" height="94" rx="14" fill="#EEF0FD" stroke="#D9DCEB" stroke-width="1.5"/>
+<text x="750" y="330" font-size="21" font-weight="600" fill="#0B0D1F">2. Predict remaining life</text><text x="750" y="360" font-size="17" fill="#5B6076">LightGBM: low / likely / high</text>
+<path d="M890 388 L890 408" stroke="#5367EB" stroke-width="3" marker-end="url(#a)"/>
+<rect x="730" y="408" width="320" height="94" rx="14" fill="#EEF0FD" stroke="#D9DCEB" stroke-width="1.5"/>
+<text x="750" y="444" font-size="21" font-weight="600" fill="#0B0D1F">3. Explain and rank risk</text><text x="750" y="474" font-size="17" fill="#5B6076">plain-English reason</text>
+<path d="M890 502 L890 522" stroke="#5367EB" stroke-width="3" marker-end="url(#a)"/>
+<rect x="730" y="522" width="320" height="94" rx="14" fill="#EEF0FD" stroke="#D9DCEB" stroke-width="1.5"/>
+<text x="750" y="558" font-size="21" font-weight="600" fill="#0B0D1F">4. Plan the week</text><text x="750" y="588" font-size="17" fill="#5B6076">crews, constraints, approvals</text>
+<path d="M890 616 L890 636" stroke="#5367EB" stroke-width="3" marker-end="url(#a)"/>
+<rect x="730" y="636" width="320" height="94" rx="14" fill="#EEF0FD" stroke="#D9DCEB" stroke-width="1.5"/>
+<text x="750" y="672" font-size="21" font-weight="600" fill="#0B0D1F">5. Rules gate: call a person?</text><text x="750" y="702" font-size="17" fill="#5B6076">top band, no repeat, daily cap</text>
+<path d="M650 360 L710 360" stroke="#5367EB" stroke-width="3" fill="none" marker-end="url(#a)" marker-start="url(#a)"/>
+<circle cx="680" cy="330" r="17" fill="#5367EB"/><text x="680" y="337" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">2</text>
+<rect x="1130" y="130" width="430" height="120" rx="16" fill="#FFFFFF" stroke="#D9DCEB" stroke-width="2"/>
+<text x="1148" y="164" font-size="24" font-weight="600" fill="#0B0D1F">Manager dashboard (React)</text>
+<text x="1148" y="192" font-size="18" fill="#5B6076">Fleet · Plan with Approve · Impact</text>
+<text x="1148" y="214" font-size="18" fill="#5B6076">Decision log · Work orders · Exports</text>
+<rect x="1130" y="300" width="430" height="110" rx="16" fill="#EEF0FD" stroke="#5367EB" stroke-width="2"/>
+<text x="1148" y="334" font-size="24" font-weight="600" fill="#0B0D1F">API (FastAPI)</text>
+<text x="1148" y="362" font-size="18" fill="#5B6076">REST, live stream, voice tools, webhook</text>
+<rect x="1130" y="470" width="430" height="100" rx="16" fill="#FFFFFF" stroke="#D9DCEB" stroke-width="2"/>
+<text x="1148" y="504" font-size="24" font-weight="600" fill="#0B0D1F">Technician phone page</text>
+<text x="1148" y="532" font-size="18" fill="#5B6076">a web call in the browser, no app</text>
+<rect x="1130" y="630" width="430" height="130" rx="16" fill="#FFFFFF" stroke="#5367EB" stroke-width="2"/>
+<text x="1148" y="664" font-size="24" font-weight="600" fill="#0B0D1F">ElevenLabs voice agent</text>
+<text x="1148" y="692" font-size="18" fill="#5B6076">Gemini 3.8 Flash · guardrails</text>
+<text x="1148" y="714" font-size="18" fill="#5B6076">4 tools · call report card</text>
+<path d="M1345 300 L1345 250" stroke="#5367EB" stroke-width="3" fill="none" marker-end="url(#a)" marker-start="url(#a)"/>
+<circle cx="1380" cy="275" r="17" fill="#5367EB"/><text x="1380" y="282" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">7</text>
+<text x="1400" y="282" font-size="17" fill="#5B6076">approve = work order</text>
+<path d="M1345 410 L1345 470" stroke="#5367EB" stroke-width="3" fill="none" marker-end="url(#a)"/>
+<circle cx="1380" cy="440" r="17" fill="#5367EB"/><text x="1380" y="447" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">4</text>
+<path d="M1345 570 L1345 630" stroke="#5367EB" stroke-width="3" fill="none" marker-end="url(#a)" marker-start="url(#a)"/>
+<circle cx="1380" cy="600" r="17" fill="#5367EB"/><text x="1380" y="607" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">5</text>
+<path d="M1050 700 L1090 700 L1090 355 L1130 355" stroke="#5367EB" stroke-width="3" fill="none" marker-end="url(#a)"/>
+<circle cx="1090" cy="530" r="17" fill="#5367EB"/><text x="1090" y="537" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+<path d="M1560 695 L1605 695 L1605 355 L1560 355" stroke="#5367EB" stroke-width="3" fill="none" stroke-dasharray="8 6" marker-end="url(#a)"/>
+<text x="1640" y="525" font-size="17" fill="#5367EB" font-weight="600" text-anchor="middle" transform="rotate(-90 1640 525)">tool calls, post-call webhook</text>
+<circle cx="1605" cy="570" r="17" fill="#5367EB"/><text x="1605" y="577" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">6</text>
+<rect x="40" y="800" width="1600" height="110" rx="16" fill="#EEF0FD" stroke="#D9DCEB" stroke-width="1.5"/>
+<circle cx="70" cy="836" r="17" fill="#5367EB"/><text x="70" y="843" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">1</text>
+<text x="98" y="843" font-size="19" fill="#0B0D1F">Sensor readings stream in</text>
+<circle cx="450" cy="836" r="17" fill="#5367EB"/><text x="450" y="843" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">2</text>
+<text x="478" y="843" font-size="19" fill="#0B0D1F">Engine predicts, explains, plans</text>
+<circle cx="830" cy="836" r="17" fill="#5367EB"/><text x="830" y="843" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">3</text>
+<text x="858" y="843" font-size="19" fill="#0B0D1F">Rules gate decides a person is needed</text>
+<circle cx="1210" cy="836" r="17" fill="#5367EB"/><text x="1210" y="843" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">4</text>
+<text x="1238" y="843" font-size="19" fill="#0B0D1F">Technician's phone rings</text>
+<circle cx="70" cy="876" r="17" fill="#5367EB"/><text x="70" y="883" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">5</text>
+<text x="98" y="883" font-size="19" fill="#0B0D1F">Voice agent asks: earliest day?</text>
+<circle cx="450" cy="876" r="17" fill="#5367EB"/><text x="450" y="883" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">6</text>
+<text x="478" y="883" font-size="19" fill="#0B0D1F">The answer re-plans, and is logged</text>
+<circle cx="830" cy="876" r="17" fill="#5367EB"/><text x="830" y="883" font-size="20" font-weight="700" fill="#fff" text-anchor="middle">7</text>
+<text x="858" y="883" font-size="19" fill="#0B0D1F">A manager approves; verdicts tune the alert threshold</text>
+</svg>

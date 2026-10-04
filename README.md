@@ -3,7 +3,7 @@
 **Predicts which pipeline compressor turbine will fail next, schedules the fix within crew limits, and phones the on-call technician. Their spoken answer re-plans the week.**
 
 IEEE YP Industry Hackathon 2026 · Stream: **Energy and Infrastructure Systems** · Path: **Option A** (own problem statement)
-Team: [FILL: team name] · Olisemelie David, ML engine ([FILL: GitHub handle]) · Ebube Okutalukwe, backend ([FILL: GitHub handle]) · David Oreoluwa, dashboard, voice agent and pitch ([@duvtant](https://github.com/duvtant)) · Team captain: [FILL: name]
+Team: **Team Ace** · Olisemelie David, ML engine ([FILL: GitHub handle]) · Ebube Okutalukwe, backend ([FILL: GitHub handle]) · David Oreoluwa, dashboard, voice agent and pitch ([@duvtant](https://github.com/duvtant)) · Team captain: [FILL: name]
 
 **Theme fit: "Autonomous Intelligence for Industrial Innovation".** This is a hard-engineering problem, not a productivity app: prognostics of a physical degradation process, probabilistic remaining-life estimation, simulation of maintenance policies, and optimisation of crew schedules under capacity constraints, with a voice agent that closes the loop with a human in the field.
 
@@ -11,7 +11,7 @@ Team: [FILL: team name] · Olisemelie David, ML engine ([FILL: GitHub handle]) �
 
 | | |
 |---|---|
-| **Live demo** | https://pipeguard.blunelabs.com ([FILL: confirm it is up during judging, 1 to 4 PM MDT]) |
+| **Live demo** | https://pipeguard.blunelabs.com (deployed on a Hetzner server behind HTTPS; it replays a simulated fleet) |
 | **Demo video (under 5 min)** | [FILL: video URL] |
 | **Run it yourself** | `cp .env.example .env && make up`, then open http://localhost:8088 |
 | **Dataset** | NASA C-MAPSS FD001, cited in [Credits](#14-credits-and-citations) |
@@ -49,8 +49,6 @@ Every row points to something you can open, run or read. Weights are from the [j
 - **Maintenance manager** at a mid-size Alberta gas operator: plans each week's work with limited crews and has to justify the spend.
 - **On-call field technician**: does the work, often far from the office, and needs a short, clear call, not a dashboard.
 
-**Industry validation.** [FILL: one real line from a conversation with an industry mentor or practitioner, who they were (role, not name unless they agree), and what we changed because of it. Do not invent this. If no conversation happened, delete this paragraph.]
-
 ---
 
 ## 3. Autonomous reasoning: plan → score → change
@@ -87,21 +85,30 @@ flowchart LR
 | Model | Average error (cycles) | Failing engines caught (of 25) | False alarms |
 |---|---|---|---|
 | Starter-style linear model (named baseline) | 27.5 | 12 | 0 |
-| Gradient boosting, capped RUL, untuned (first result) | 14.8 | 18 | 1 |
-| **PipeGuard final models** | [FILL: MAE from `ml/artifacts/metadata.json`] | [FILL] | [FILL] |
+| Gradient boosting, capped RUL, untuned (first result) | 14.2 | 19 | 1 |
+| **PipeGuard final models** (quantile LightGBM, trained on augmented data) | **11.4** | **18** | 1 |
 
-Also reported by `ml.evaluate`: RMSE, NASA asymmetric score, and coverage of the 80% range (target 70 to 90%). [FILL: paste the table].
+Same test set, other measures (from `ml/artifacts/metadata.json`):
+
+| Measure | Starter-style linear | PipeGuard final |
+|---|---|---|
+| RMSE (cycles, lower is better) | 34.87 | **14.30** |
+| NASA asymmetric score (lower is better) | 26,282 | **397** |
+| Coverage of the 80% range (target 70 to 90%) | not applicable | 0.82 |
+
+The untuned first result caught one more failing engine (19 against 18) but its error was larger; the final model is the better estimator and gives honest ranges. We report both.
 
 **Decision quality** (Impact tab, cross-fitted predictions, 100 turbines; the cost figures are illustrative assumptions, adjustable in the UI):
 
 | Policy | Breakdowns | Wasted services | Total cost |
 |---|---|---|---|
-| Run until it breaks | [FILL] | [FILL] | [FILL] |
-| Fixed schedule (every 120 days) | [FILL] | [FILL] | [FILL] |
-| PipeGuard, default settings | [FILL] | [FILL] | [FILL] |
-| **PipeGuard, self-tuned (the improvement round)** | [FILL] | [FILL] | [FILL] |
+| Run until it breaks | 181 | 0 | $36.2M |
+| Fixed schedule (every 120 days) | 0 | 234 of 337 services | $6.74M |
+| **PipeGuard, self-tuned (the improvement round)** | 0 | 0 of 206 services | **$4.12M** |
 
-**Headline:** [FILL: "PipeGuard would have caught X of Y failures at least 14 days early."] *Definition:* **detected** = flagged at risk at least 14 days before failure; **actioned** = also serviced in time given crew capacity. We report both.
+**The improvement round.** PipeGuard's default alert setting (probability 0.5, 14 days ahead) costs $3.92M but gives the full two weeks of warning for only 22 of 100 failures (median warning 11 days). Tuning the setting on cross-fitted predictions (probability 0.3, 21 days ahead) raises that to **96 of 100** (median warning 20 days) for **$200K more**, about 5%. A check that tuned on 60 engines and scored on the other 40 picked the same setting. The self-tuned run is the one reported in the first table.
+
+**Headline:** PipeGuard would have caught 96 of 100 failures at least 14 days early, with 0 false alarms (for 80% of units the first warning came 15 to 26 days ahead). *Definition:* **detected** = flagged at risk at least 14 days before failure; **actioned** = also serviced in time given crew capacity. We report both.
 
 ### Why the numbers can be trusted
 - **Cross-fitting.** The model is trained on 80% of the engines and predicts the other 20%, rotating through five folds. **Every turbine in the live demo is predicted by a fold model that never saw it.**
@@ -142,7 +149,16 @@ Also reported by `ml.evaluate`: RMSE, NASA asymmetric score, and coverage of the
 | **Test mode** | Kill or corrupt a sensor on any unit; reset to the identical starting state; simulate a call |
 | **Technician phone page** | Runs on a phone: incoming call, live voice conversation, verdict buttons |
 
-[FILL: 2 to 5 screenshots with captions: fleet overview, Impact tab, decision log, voice call, unit detail. Store them in `docs/pitch/screenshots/` and link them here.]
+**Screenshots** (taken from the deployed server)
+
+| | |
+|---|---|
+| ![Fleet overview with a unit at risk](docs/screenshots/01-fleet-overview-unit-at-risk.png) | ![Plan with a proposed change awaiting approval](docs/screenshots/02-plan-proposed-change-awaiting-approval.png) |
+| 1. Fleet overview: one unit at risk, with remaining-life range and reason | 2. Plan: a proposed change waiting for a manager's Approve |
+| ![Impact: PipeGuard against the baselines](docs/screenshots/03-impact-pipeguard-vs-baselines.png) | ![Decision log with a call and its transcript](docs/screenshots/04-decision-log-call-and-transcript.png) |
+| 3. Impact: yearly cost of PipeGuard against the two baselines | 4. Decision log: the call, the transcript and what it changed |
+| ![Technician phone page ringing](docs/screenshots/05-technician-phone-ringing.png) | |
+| 5. Technician phone page: the incoming call | |
 
 **The five-minute path** (what we show judges, following the handbook's recommended structure of intro, problem, software demo, wrap-up; 5 minutes plus 3 minutes of Q&A)
 1. **Intro** (10 s): the team, one line each.
@@ -156,6 +172,10 @@ Also reported by `ml.evaluate`: RMSE, NASA asymmetric score, and coverage of the
 ---
 
 ## 5. Architecture
+
+![PipeGuard architecture: data in, engine decides, voice agent closes the loop, a person approves](docs/assets/architecture.png)
+
+The same flow as a Mermaid diagram, with the reasoning for each choice below it:
 
 ```mermaid
 flowchart LR
@@ -200,7 +220,7 @@ The call is not decoration: it changes decisions. A technician's answer becomes 
 1. **Alert call.** *"Unit 14 at Edson has about 20 to 35 days left. Compressor outlet temperature has risen for six days. Can your crew service it by Thursday?"* The answer re-plans the week.
 2. **Field report.** After the job the technician speaks a note; it is stored and the unit's status updates.
 3. **Feedback verdict.** *Confirmed wear / looks fine / part replaced.* PipeGuard tracks how often its warnings are right and nudges the alert threshold.
-4. **Multilingual.** Each technician has a preferred language; a French-speaking technician is called in French and the decision log shows the French transcript with an English summary. [FILL: confirm French works on our account before submit; otherwise move this to the roadmap.]
+4. **Multilingual (roadmap).** The agent supports per-technician language overrides, but we only tested English calls, so French is not a claim of this submission.
 
 **How deeply we use ElevenLabs** (our entry for *Best Project Built with ElevenLabs*)
 
@@ -209,15 +229,15 @@ The call is not decoration: it changes decisions. A technician's answer becomes 
 | **Agents platform** | A private conversational agent ("PipeGuard Dispatcher") holds the call: speech-to-text, LLM, text-to-speech and turn-taking |
 | **Server tools** | Four authenticated tools the agent calls **mid-call** against our API: `submit_availability` (re-plans the week), `field_report`, `feedback`, `get_unit_status` |
 | **Signed URLs + dynamic variables** | Our server mints a short-lived signed URL per call and injects the unit, station, remaining-life range, reason and simulated date, so the agent only speaks facts we pass in |
-| **Language overrides** | English or French per technician, set at session start |
+| **Language overrides** | Set per technician at session start (English tested; other languages are roadmap) |
 | **Data collection** | Structured extraction after the call (available day, verdict, and an **English summary** of a French call) |
 | **Post-call webhooks** | Transcript and analysis arrive signature-verified and are linked to the decision log; a conversation pull is the fallback if a webhook is lost |
-| **Agent testing** | A 14-scenario tool-call and simulation suite, run against several candidate LLMs, chose the model ([`docs/llm_test_results.md`](docs/llm_test_results.md)) |
+| **Agent testing** | A frozen text-test suite (8 critical tests run twice, held-out tests and 3 simulations), run against five candidate LLMs, chose the model ([`docs/llm_test_results.md`](docs/llm_test_results.md)) |
 | **React SDK** | The technician's phone page starts and runs the live voice session |
 
 **Security.** The browser never sees an API key (it gets a short-lived signed URL). Tool endpoints require a bearer secret, webhooks are signature-verified, and every action is logged in the decision log.
 
-**Choosing the model inside the agent.** Chosen by measurement, not by leaderboard: a 14-scenario tool-call test suite plus live latency runs on real calls. Results and the decision rule: [`docs/llm_test_results.md`](docs/llm_test_results.md). [FILL: chosen model and one line of why.]
+**Choosing the model inside the agent.** Chosen by measurement, not by leaderboard: a frozen test suite plus live latency runs on real calls. **Chosen: Gemini 3.8 Flash (low reasoning effort)**: 16 of 16 on the critical tool-call tests, the cheapest of the finalists (about half the cost of Claude Sonnet 5.5) and fast enough for a live call. Results and the decision rule: [`docs/llm_test_results.md`](docs/llm_test_results.md).
 
 ---
 
@@ -315,7 +335,7 @@ docs/        overview, technical specification, team guides, LLM test results
 - The demo fleet is the NASA **training** set (run-to-failure histories); accuracy figures come from NASA's separate test set. The self-tuned settings and Impact numbers are computed on the same 100 engines using cross-fitted predictions, so they describe this fleet, not a guarantee for another.
 - All costs are illustrative round numbers. Use the sliders.
 - Many field compressors are piston-driven, not turbine-driven. We start where our data fits and extend the method once we have their data.
-- Not built in this weekend: telephone-network calling (the demo call runs in a browser), a mathematical optimizer for scheduling (greedy today), multi-tenant accounts. [FILL: remove or add items to match what was actually cut.]
+- Not built in this weekend: telephone-network calling (the demo call runs in a browser), a mathematical optimizer for scheduling (greedy today), multi-tenant accounts, French calls, and the "ask a manager" switch in Settings (it is always on in this version).
 
 ---
 
@@ -336,7 +356,7 @@ The handbook asks for responsible, transparent agent design and attention to alg
 
 ## 12. Originality and attribution
 
-- All application code was written during the hackathon window (October 2 to 4, 2026); the commit history in this repository shows it. [FILL: confirm that the baseline test script behind the 27.5 → 14.8 result was also written in the window, or cite it as reused starter code.]
+- All application code was written during the hackathon window (October 2 to 4, 2026); the commit history in this repository shows it. The starter-style linear baseline (27.5 average error) comes from the starter script kept in `ml/legacy/agent_starter.py`, which we reused as the named baseline; the rest of `ml/` is new.
 - Open-source building blocks: PostgreSQL, FastAPI, SQLModel, psycopg, Pydantic, LightGBM, scikit-learn, pandas, NumPy, PyArrow, React, Vite, Tailwind CSS, Recharts, TanStack Query, React Router, nginx, Docker, Caddy, and the ElevenLabs SDKs.
 - Data: NASA C-MAPSS FD001 (see §14).
 
