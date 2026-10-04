@@ -3,7 +3,7 @@
 **Predicts which pipeline compressor turbine will fail next, schedules the fix within crew limits, and phones the on-call technician. Their spoken answer re-plans the week.**
 
 IEEE YP Industry Hackathon 2026 · Stream: **Energy and Infrastructure Systems** · Path: **Option A** (own problem statement)
-Team: **Team Ace** · Olisemelie David, ML engine ([@mrazuka](https://github.com/mrazuka)) · Ebube Okutalukwe, backend ([@monterovincent](https://github.com/monterovincent)) · David Oreoluwa, dashboard, voice agent and pitch ([@duvtant](https://github.com/duvtant)) · Team captain: [FILL: name]
+Team: **Team Ace** · Olisemelie David, ML engine ([@mrazuka](https://github.com/mrazuka)) · Ebube Okutalukwe, backend ([@monterovincent](https://github.com/monterovincent)) · David Oreoluwa, dashboard, voice agent and pitch ([@duvtant](https://github.com/duvtant))
 
 **Theme fit: "Autonomous Intelligence for Industrial Innovation".** This is a hard-engineering problem, not a productivity app: prognostics of a physical degradation process, probabilistic remaining-life estimation, simulation of maintenance policies, and optimisation of crew schedules under capacity constraints, with a voice agent that closes the loop with a human in the field.
 
@@ -22,12 +22,9 @@ Team: **Team Ace** · Olisemelie David, ML engine ([@mrazuka](https://github.com
 | | |
 |---|---|
 | **Live demo** | https://pipeguard.blunelabs.com (deployed on a Hetzner server behind HTTPS; it replays a simulated fleet) |
-| **Demo video (under 5 min)** | [FILL: video URL] |
 | **Run it yourself** | `cp .env.example .env && make up`, then open http://localhost:8088 |
 | **Dataset** | NASA C-MAPSS FD001, cited in [Credits](#14-credits-and-citations) |
 | **Named naive baselines** | Run until it breaks · Fixed maintenance schedule · Starter-style linear model |
-| **Option A organizer approval** | [FILL: date and channel of the written approval; the handbook requires problem and dataset validation by end of day Saturday] |
-| **Submission issue** | [FILL: link to our GitHub Issue on nagusubra/industry-hackathon-lab] |
 
 ---
 
@@ -177,7 +174,7 @@ The untuned first result caught one more failing engine (19 against 18) but its 
 4. **Architecture, decision-making and results** (60 s): one diagram, the plan → score → change loop, the before and after numbers.
 5. **Business case and close** (50 s): first customer, 100-day pilot, pricing, scaling, one closing line.
 
-**Reliability for the demo.** The scenario is deterministic: **Reset** returns the identical starting state, so every rehearsal matches the pitch. Fallbacks: a recorded-conversation replay through the live code path, precomputed predictions, and a backup video.
+**Reliability for the demo.** The scenario is deterministic: **Reset** returns the identical starting state, so every rehearsal matches the pitch. Fallbacks: a recorded-conversation replay through the live code path, precomputed predictions, and backup screenshots.
 
 ---
 
