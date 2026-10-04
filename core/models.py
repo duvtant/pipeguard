@@ -93,7 +93,7 @@ class QualityFlag(SQLModel, table=True):
     sensor: str
     flag_type: str                     # sensor_offline | sensor_stuck | sensor_spike | sensor_out_of_range
     resolved_day: Optional[int] = None
-    detail: str = ""                   # NEW: human-readable note from the quality check
+    detail: str = Field(default="", sa_column_kwargs={"server_default": ""})  # note from the quality check
     # Idempotency: at most one OPEN flag per (unit, sensor, type).
     __table_args__ = (
         Index("uq_open_quality_flag", "unit_id", "sensor", "flag_type",
@@ -137,7 +137,7 @@ class PlanItem(SQLModel, table=True):
     unit_id: str = Field(index=True)
     planned_day: int
     technician_id: Optional[int] = None
-    crew: int = 0                      # NEW: 0-based crew slot from the scheduler; API maps it to a technician
+    crew: int = Field(default=0, sa_column_kwargs={"server_default": "0"})  # 0-based crew slot
     expected_saving: float = 0.0
     reason: str = ""
     state: str = "planned"             # planned | done | blocked | needs_manager_decision
@@ -186,6 +186,10 @@ class Call(SQLModel, table=True):
     data_collection: Optional[dict] = Field(default=None, sa_column=Column(JSONB))
     duration_secs: Optional[int] = None
     received_via: Optional[str] = None  # webhook | pull | webhook_fallback
+    # ElevenLabs report card, [{criteria_id, result, rationale}]. Null when the call has none.
+    evaluation: Optional[list] = Field(default=None, sa_column=Column(JSONB))
+    # Set when the phone page reports hang-up. The sweeper pulls the transcript if no webhook arrives.
+    ended_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True)))
 
 
 class Feedback(SQLModel, table=True):

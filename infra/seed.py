@@ -21,6 +21,7 @@ sys.path.insert(0, str(ROOT))  # lets "core" import when this runs as a script
 from core import models  # noqa: E402,F401  registers every table on SQLModel.metadata
 from core.config import get_settings  # noqa: E402
 from core.db import init_db, psycopg_dsn  # noqa: E402
+from core.migrate import ensure_columns  # noqa: E402
 from core.models import SENSOR_COLUMNS  # noqa: E402
 
 # id, code, name, lat, lon. Same order as the contract's STATION_ORDER.
@@ -49,6 +50,15 @@ DEFAULT_HORIZON_DAYS = 14
 
 # NASA C-MAPSS file layout: no header, 26 whitespace-separated columns.
 RAW_COLUMNS = ["unit", "cycle", "setting1", "setting2", "setting3", *[f"s{i}" for i in range(1, 22)]]
+
+
+def tuned_defaults() -> tuple[float, int]:
+    """(threshold, horizon_days) from ml/artifacts/metadata.json 'tuned', else the placeholders above."""
+    try:
+        tuned = json.loads((ROOT / "ml" / "artifacts" / "metadata.json").read_text(encoding="utf-8"))["tuned"]
+        return float(tuned["threshold"]), int(tuned["horizon_days"])
+    except (OSError, ValueError, KeyError, TypeError):
+        return DEFAULT_THRESHOLD, DEFAULT_HORIZON_DAYS
 
 
 def field_slug(tech_id: int, key: str) -> str:
@@ -82,6 +92,7 @@ def reseed() -> dict:
     nasa = load_nasa()
     key = cfg.admin_token or "dev-only-slug-key"  # empty in dev, set in .env on the server
     init_db()  # creates any missing tables first
+    ensure_columns()  # defaults the engine's raw inserts rely on, also on older databases
 
     # --- build everything in memory first, so a bad scenario fails before we touch the database ---
     unit_rows, reading_rows = [], []
@@ -140,7 +151,7 @@ def reseed() -> dict:
                 " VALUES (1, 0, 'paused', %s, %s, %s)",
                 (float(scenario.get("speed_seconds_per_day", 1.0)), scenario["scenario_id"], epoch))
             cur.execute("INSERT INTO engine_params (id, threshold, horizon_days) VALUES (1, %s, %s)",
-                        (DEFAULT_THRESHOLD, DEFAULT_HORIZON_DAYS))
+                        tuned_defaults())
             if fault_rows:
                 cur.executemany(
                     "INSERT INTO faults (unit_id, sensor, type, start_day, end_day, source)"

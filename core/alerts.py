@@ -62,11 +62,21 @@ def _calls_today(s: Session, tech_id: int, day: int) -> int:
                      {"t": tech_id, "d": day}).scalar_one()
 
 
+def _is_ringing(s: Session, tech_id: int) -> bool:
+    return s.execute(text("SELECT 1 FROM call_requests WHERE technician_id = :t AND state = 'ringing' LIMIT 1"),
+                     {"t": tech_id}).first() is not None
+
+
 def _pick_technician(s: Session, unit_id: str, day: int):
-    for t in station_techs(s, unit_id):
-        if _calls_today(s, t["id"], day) < settings.max_calls_per_tech_per_day:
-            return t
-    return None
+    """(technician or None, reason if None). One ring at a time per technician; the unit retries next tick."""
+    under_cap = [t for t in station_techs(s, unit_id)
+                 if _calls_today(s, t["id"], day) < settings.max_calls_per_tech_per_day]
+    for t in under_cap:
+        if not _is_ringing(s, t["id"]):
+            return t, None
+    if under_cap:
+        return None, "every available technician at the station already has a call ringing, will retry"
+    return None, "daily call cap reached for every technician at the station"
 
 
 def _backup_for(s: Session, unit_id: str, missed_tech_id: int):
@@ -116,9 +126,9 @@ def create_call_requests(s: Session, sim_day: int | None = None, top_n: int = TO
                      {"u": uid}).first():
             continue  # someone else just created it
         why = _dup_reason(s, uid, day, p_now)
-        tech = None if why else _pick_technician(s, uid, day)
-        if not why and tech is None:
-            why = "daily call cap reached for every technician at the station"
+        tech = None
+        if not why:
+            tech, why = _pick_technician(s, uid, day)
         if why:
             log.info("call suppressed for %s: %s", uid, why)
             out["suppressed"].append((uid, why))
@@ -189,21 +199,61 @@ def sweep_expired(s: Session, limit: int = 50) -> int:
     return sum(miss_call(s, i, "expired") for i in ids)
 
 
+def on_engine_tick(sim_day: int) -> None:
+    """Called by the engine after every tick (engine/pg_store.py after_tick). Rings whoever the guardrails allow.
+
+    Never raises: a bug in call policy must not stop the fleet from updating.
+    """
+    try:
+        with session_scope() as s:
+            res = create_call_requests(s, sim_day)
+        if res["created"]:
+            log.info("day %s: rang for call requests %s", sim_day, res["created"])
+    except Exception:
+        log.exception("on_engine_tick failed on day %s", sim_day)
+
+
 def sweep_once() -> int:
     with session_scope() as s:
         return sweep_expired(s)
 
 
+def _warm_impact() -> None:
+    """Load the cross-fitted predictions and memoise the default Impact positions. Not fatal if the file is absent."""
+    try:
+        from core.impact import warm
+        warm()
+    except Exception as exc:
+        log.warning("Impact warm-up skipped (%s): /api/simulate answers 503 until the data is there", exc)
+
+
 async def sweeper_loop(interval: float = 1.0) -> None:
-    """Background task started by the API. A failed tick is logged and retried, never fatal."""
-    while True:
-        try:
-            await asyncio.to_thread(sweep_once)
-        except asyncio.CancelledError:
-            raise
-        except Exception:
-            log.exception("sweeper tick failed")
-        await asyncio.sleep(interval)
+    """Background task started by the API: expires rings every second and, in a child task, pulls call
+    transcripts the webhook never delivered. A failed tick is logged and retried, never fatal."""
+    from core.call_records import pull_loop  # imported here: call_records imports this module
+    from core.migrate import ensure_columns
+    try:
+        await asyncio.to_thread(ensure_columns)  # databases created before a model change get the new columns
+    except Exception:
+        log.exception("ensure_columns failed")
+    try:
+        from core.replan import warm_up
+        await asyncio.to_thread(warm_up)  # so the first voice call does not pay the 1.2 s engine import
+    except Exception:
+        log.exception("replan warm-up failed (voice re-plans will fall back to the delayed-update sentence)")
+    asyncio.create_task(asyncio.to_thread(_warm_impact))  # in the background: the sweeper must not wait for it
+    pull = asyncio.create_task(pull_loop())
+    try:
+        while True:
+            try:
+                await asyncio.to_thread(sweep_once)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                log.exception("sweeper tick failed")
+            await asyncio.sleep(interval)
+    finally:
+        pull.cancel()
 
 
 # ---------------------------------------------------------------- phone page helpers
@@ -213,10 +263,10 @@ def technician_by_slug(s: Session, slug: str):
 
 
 def ringing_request(s: Session, tech_id: int, live_only: bool = True) -> int | None:
-    """The call currently ringing for this technician. live_only skips rings past their expiry."""
+    """The oldest call ringing for this technician (the one the phone shows first). live_only skips expired rings."""
     extra = " AND ring_expires_at > now()" if live_only else ""
     return s.execute(text("SELECT id FROM call_requests WHERE technician_id = :t AND state = 'ringing'"
-                          + extra + " ORDER BY id DESC LIMIT 1"), {"t": tech_id}).scalar()
+                          + extra + " ORDER BY id LIMIT 1"), {"t": tech_id}).scalar()
 
 
 def ring_payload(s: Session, cid: int) -> dict | None:
@@ -250,4 +300,6 @@ def link_conversation(s: Session, tech_id: int, conversation_id: str, ended: boo
                    "call_request_id = COALESCE(calls.call_request_id, EXCLUDED.call_request_id)"),
               {"c": cr.id, "v": conversation_id, "l": cr.language})
     if ended:
+        s.execute(text("UPDATE calls SET ended_at = COALESCE(ended_at, now()) WHERE conversation_id = :v"),
+                  {"v": conversation_id})  # starts the 60 s webhook timer (core/call_records.pull_pending)
         finish_call(s, cr.id)
