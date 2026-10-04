@@ -3,7 +3,7 @@
 **Predicts which pipeline compressor turbine will fail next, schedules the fix within crew limits, and phones the on-call technician. Their spoken answer re-plans the week.**
 
 IEEE YP Industry Hackathon 2026 · Stream: **Energy and Infrastructure Systems** · Path: **Option A** (own problem statement)
-Team: **Team Ace** · Olisemelie David, ML engine ([FILL: GitHub handle]) · Ebube Okutalukwe, backend ([FILL: GitHub handle]) · David Oreoluwa, dashboard, voice agent and pitch ([@duvtant](https://github.com/duvtant)) · Team captain: [FILL: name]
+Team: **Team Ace** · Olisemelie David, ML engine ([@mrazuka](https://github.com/mrazuka)) · Ebube Okutalukwe, backend ([@monterovincent](https://github.com/monterovincent)) · David Oreoluwa, dashboard, voice agent and pitch ([@duvtant](https://github.com/duvtant)) · Team captain: [FILL: name]
 
 **Theme fit: "Autonomous Intelligence for Industrial Innovation".** This is a hard-engineering problem, not a productivity app: prognostics of a physical degradation process, probabilistic remaining-life estimation, simulation of maintenance policies, and optimisation of crew schedules under capacity constraints, with a voice agent that closes the loop with a human in the field.
 
