@@ -493,12 +493,12 @@ All timestamps in UTC. `sim_day` is an integer.
 | `plan_items` | `id`, `unit_id`, `planned_day`, `technician_id`, `expected_saving`, `reason`, `state` (`planned`, `done`, `blocked`, `needs_manager_decision`) |
 | `constraints` | `id`, `technician_id`, `unit_id`, `earliest_day`, `note`, `source` (`voice`, `manual`), `created_at` |
 | `call_requests` | `id`, `unit_id`, `technician_id`, `sim_day`, `state` (`ringing`, `answered`, `missed`, `escalated`, `done`), `attempt` (1 = primary, 2 = backup), `ring_expires_at` (real time). Timers live in the database, not in process memory, so a restart cannot lose a ringing call |
-| `calls` | `id`, `call_request_id`, `conversation_id`, `language`, `transcript` (JSONB), `summary`, `data_collection` (JSONB), `duration_secs`, `received_via` (`webhook`, `pull`) |
+| `calls` | `id`, `call_request_id`, `conversation_id`, `language`, `transcript` (JSONB, **stored unmodified** from `data.transcript[]`, including `tool_calls`, `tool_results`, `triggered_guardrails`), `evaluation` (JSONB, `[{criteria_id, result, rationale}]` or null), `summary`, `data_collection` (JSONB), `duration_secs`, `received_via` (`webhook`, `pull`) |
 | `feedback` | `id`, `unit_id`, `technician_id`, `verdict`, `note`, `sim_day` |
 | `faults` | `id`, `unit_id`, `sensor`, `type`, `start_day`, `end_day`, `source` (`planted`, `toggle`) |
 | `events` | `id`, `sim_day`, `type`, `unit_id`, `payload` (JSONB), `created_at` |
 
-**Decision log** = `events` joined with `predictions`, `call_requests`, `calls`, `constraints`, `plan_items`. Event types include: `status_change`, `sensor_issue`, `call_requested`, `call_answered`, `constraint_added`, `plan_changed`, `call_summary`, `feedback_received`, `threshold_adjusted`, `failure`, `manager_alert`.
+**Decision log** = `events` joined with `predictions`, `call_requests`, `calls`, `constraints`, `plan_items`. Event types include: `status_change`, `sensor_issue`, `call_requested`, `call_answered`, `constraint_added`, `plan_changed`, `call_summary`, `plan_approved`, `manager_decision`, `feedback_received`, `threshold_adjusted`, `failure`, `manager_alert`. `plan_items` also has `approval` (`proposed`/`approved`); a voice-driven day change sets `proposed`, a manager's approve sets `approved`, and the work-orders CSV lists approved items only.
 
 ---
 
@@ -598,6 +598,9 @@ Base path: `/api`. JSON everywhere. OpenAPI docs at `/docs`.
 | Security | Private agent using **signed URLs**. Do **not** also configure an allowlist (the docs say never combine them). Overrides are **off by default**: in the agent's Security settings enable `language` and `first message` (and `system prompt` only if we use it). Checked against the docs |
 | Max call duration | 120 seconds |
 | System tools | `end_call` |
+| Guardrails (staged, not yet pushed) | `platform_settings.guardrails`: **Focus** and **Manipulation** on, streaming mode. Default action when one fires is to **end the call**, so a false positive on stage would kill the demo: stage in the spare account, make ~5 real calls with the demo script, then enable. Custom guardrails not used (extra LLM cost) |
+| Call report card (staged) | `platform_settings.evaluation.criteria`: `asked_earliest_day`, `confirmed_before_booking`, `stayed_on_task_and_facts`, `honest_about_being_automated`. Runs after the call. Results land in `data.analysis.evaluation_criteria_results`; `unknown` is not a failure |
+| Retention (staged) | `platform_settings.privacy.retention_days: 30`. Never `0` (it schedules deletion and would break the pull fallback) |
 
 **First message (English):**
 `Hi {{technician_name}}, this is PipeGuard for Prairie Gas. Unit {{unit_id}} at {{station_name}} needs attention. Do you have a minute?`
@@ -648,11 +651,11 @@ If a live tool call failed, the API applies `available_day` from data collection
 ### 12.6 Post-call webhook
 
 - Enable post-call **transcription** webhooks for the workspace, pointing to `https://pipeguard.blunelabs.com/api/webhooks/elevenlabs/post-call`.
-- Payload type `post_call_transcription` with `data.conversation_id`, `data.transcript[]` (`role`, `message`, `time_in_call_secs`), `data.metadata` (`call_duration_secs`, ...), `data.analysis` (`transcript_summary`, `data_collection_results`, `call_successful`), and `data.conversation_initiation_client_data.dynamic_variables`.
+- Payload type `post_call_transcription` with `data.conversation_id`, `data.transcript[]` (`role`, `message`, `time_in_call_secs`), `data.metadata` (`call_duration_secs`, ...), `data.analysis` (`transcript_summary`, `data_collection_results`, `call_successful`, `evaluation_criteria_results`), and `data.conversation_initiation_client_data.dynamic_variables`.
 - **Verify the signature** with the official SDK, not hand-rolled HMAC: header `elevenlabs-signature`; Python `elevenlabs.webhooks.construct_event(rawBody=..., sig_header=..., secret=...)` (JS: `constructEvent`). It validates the signature and timestamp and parses the JSON. Read the **raw** request body (`await request.body()`) before any JSON parsing, or verification fails. Manual fallback if the SDK is unavailable: HMAC-SHA256 of `"{timestamp}.{raw_body}"` with the webhook secret, compared to `v0` from `t=<timestamp>,v0=<hash>`, rejecting timestamps older than 30 minutes.
 - Webhooks can be retried, so the handler is **idempotent on `conversation_id`**. Webhooks that fail repeatedly are auto-disabled (10 or more consecutive failures and no success in 7 days).
 - Return HTTP 200 quickly. Webhooks that fail repeatedly are auto-disabled.
-- **Fallback pull:** if no webhook arrives within 60 seconds of call end, fetch the conversation with `GET https://api.elevenlabs.io/v1/convai/conversations/{conversation_id}` (header `xi-api-key`). The response has `transcript[]` (`role`, `message`, `time_in_call_secs`, tool calls) and `analysis` (`transcript_summary`, `data_collection_results`, `call_successful`).
+- **Fallback pull:** if no webhook arrives within 60 seconds of call end, fetch the conversation with `GET https://api.elevenlabs.io/v1/convai/conversations/{conversation_id}` (header `xi-api-key`). The response has `transcript[]` (`role`, `message`, `time_in_call_secs`, `tool_calls`, `tool_results`, `triggered_guardrails`; store it whole) and `analysis` (`transcript_summary`, `data_collection_results`, `call_successful`).
 
 ### 12.7 Starting a call from the technician page
 
@@ -692,6 +695,8 @@ ElevenLabs supports native Twilio outbound calls and batch calling. It needs a T
 
 ### 12.10 LLM selection and test plan
 
+**Final test list (David, Oct 3):** Gemini 3.8 Flash (low, today's agent, the baseline), Claude Sonnet 5.5 (low), GPT-5.6 Terra (**high**; replaces Luna, `gpt-5.6-terra`), DeepSeek Flash 4.1, GLM **5.2** (medium; 5.3 is not native). Haiku 4.5 and GPT-5.4 mini are dropped from the first pass. Luna at high may be too slow for a live call (Luna at max was about 80 to 110 s to first token), so its latency decides it. (That figure was for Luna; Terra's is unmeasured.)
+
 **Owner:** David. **Time box:** 45 minutes, after the agent and its tools exist (the tools can be mocked, see below). **Output:** `docs/llm_test_results.md` with the scorecard and the chosen model.
 
 #### Why a test and not a benchmark lookup
@@ -704,6 +709,7 @@ The agent's job is narrow: read a short script, extract one day, call one tool, 
 | DeepSeek Flash 4.1 | `deepseek-v41-flash` | ElevenLabs-hosted, so no extra network hop |
 | GLM 5.2 | `glm-52` | ElevenLabs-hosted (no extra network hop). `reasoning_effort`: `none`, `low`, `medium`, `high`, `max`. 64k context. Confirmed from `elevenlabs agents llm list` |
 | Gemini 3.8 Flash | `gemini-3.8-flash` | Speed baseline. **Cannot turn reasoning off**: `reasoning_effort` is `low`, `medium` or `high` only, so use `low` |
+| Claude Sonnet 5.5 | `claude-sonnet-5-5` | Added by David Oct 3. Efforts: `low`, `medium`, `high`, `xhigh`, `max` (no `none`), so use `low`. About $0.028 per minute of model cost (ElevenLabs calculator) |
 | Claude Haiku 4.5 | `claude-haiku-4-5` | Small, fast, no reasoning mode; widely reliable on tool calls. Added from the live model list |
 | GPT-5.4 mini | `gpt-5.4-mini` | Cheaper OpenAI baseline, `reasoning_effort` `none` available |
 | Qwen3.6 35B | `qwen36-35b-a3b` | ElevenLabs-hosted small MoE model, minimum effort `low`. Include only if the first pass has room in the credit budget |
@@ -759,7 +765,7 @@ If nothing passes: tighten the tool descriptions and prompt, then rerun the fail
 
 #### Cost and hygiene
 - Test runs consume credits and each result reports credit usage. Run the suite in a **dev account**, not the production demo account, and check the usage meter after Part 1.
-- Freeze the agent config at the feature freeze (7 PM) and export it (`GET /v1/convai/agents/{agent_id}`) to `infra/elevenlabs/agent_config.json` with secrets removed.
+- There is no feature freeze: keep improving until the real deadline. Whenever the agent config is in a good state, export a backup of it (`GET /v1/convai/agents/{agent_id}`) to `infra/elevenlabs/agent_config.json` with secrets removed.
 
 ---
 
@@ -912,7 +918,7 @@ Rule of thumb for gaps: logic that decides **what** (predict, plan, score) is Ol
 | Sat morning | Models trained; schema and seed done; agent answers a test call |
 | Sat 12:00 PM | **Checkpoint:** simulator + engine + fleet page running on real predictions |
 | Sat afternoon | Impact tab, voice re-plan loop, decision log, quality checks |
-| Sat 7:00 PM | **Feature freeze** |
+| Sat evening | No feature freeze: building continues until the real deadline (Sun 11:00 AM internal, 12:00 PM hard stop) |
 | Sat night | Deploy to server, test laptop fallback, full demo run with a real call, check ElevenLabs usage |
 | Sun 8 to 10 AM | Rehearse 2 to 3 times, record backup video, take screenshots |
 | Sun 11:00 AM | Submit GitHub Issue |

@@ -20,8 +20,8 @@ Repo: https://github.com/duvtant/pipeguard. Branches: `david/...`. Public URL: `
 | 4 | **Impact tab**, decision log, unit drawer, plan page | Sat afternoon | The pitch |
 | 5 | LLM test (`techstack.md` section 12.10) and the chosen model written down | Sat afternoon | The agent |
 | 6 | Test mode, roster, work orders, recorded call (`infra/recorded_call.json`) | Sat afternoon | Ebube (simulate-call) |
-| 7 | Draft deck and script | Sat 7 PM (freeze) | Rehearsal |
-| 8 | Agent config frozen and exported (`infra/elevenlabs/`, via `elevenlabs agents pull`) | Sat 7 PM | Ebube (backup environment) |
+| 7 | Draft deck and script | Sat night | Rehearsal |
+| 8 | Agent config exported as a backup (`infra/elevenlabs/`, via `elevenlabs agents pull`) | Whenever it is in a good state | Ebube (backup environment) |
 | 9 | Full demo run with a real call, ElevenLabs usage check | Sat night | Everyone |
 | 10 | Rehearsals, backup video, screenshots, README | Sun 8 to 10 AM | Submission |
 | 11 | **GitHub Issue submitted** | **Sun 11:00 AM** (hard stop 12:00 PM) | |
@@ -81,8 +81,8 @@ You do not edit `api/`, `simulator/`, `core/` or `ml/`. If the dashboard needs s
 | **Fleet** (home) | Five station columns, 20 unit tiles each, coloured by status; clock controls (play, pause, speed, reset); "Plan changed" toast; counts of healthy, watch, at risk, sensor issue, failed; the simulated date | P1 |
 | **Unit drawer** | Range bar (low, likely, high), the reason in plain words, confidence, the top three drifting sensors as small charts with their plain-English labels, history of `p_fail`, recent events and calls | P1 |
 | **Impact** | Policy comparison table plus bar chart (breakdowns, wasted services, dollars) for run to failure, fixed schedule, PipeGuard; sliders for crew size, breakdown cost, service cost; default vs tuned threshold ("first result vs improved result"); the headline number; model metrics (27.5 to 14.8 cycles, 12 vs 18 of 25) | **P1, most important** |
-| **Plan** | 7-day schedule by station and technician; blocked and `needs_manager_decision` units highlighted | P2 |
-| **Decision log** | Timeline of chains: sensor drift, prediction, call, technician's answer, plan change, summary, feedback, threshold change. Expandable transcript. For French calls: French transcript plus the English summary | P2 |
+| **Plan** | 7-day schedule by station and technician; blocked and `needs_manager_decision` units highlighted. Voice-driven changes show **Proposed** with an Approve button (and Approve all); approved items become work orders. Hidden if the API sends no `approval` field | P2 |
+| **Decision log** | Timeline of chains: sensor drift, prediction, call, technician's answer, rules check, plan change, manager approval, summary, feedback, threshold change. Expandable transcript with tool chips, any guardrail stop, and the 4-point call report card. For French calls: French transcript plus the English summary | P2 |
 | **Roster** | Technicians: name, station, shift, language, online | P3 |
 | **Work orders** | CSV download button | P3 |
 | **Settings** | Crew size, costs, call rules (read from and written to the API) | P3 |
@@ -107,6 +107,7 @@ You do not edit `api/`, `simulator/`, `core/` or `ml/`. If the dashboard needs s
 **Decision log**
 - Each alert is one chain with icons per step. Link every call to its transcript (expandable, scrollable, speaker labels, timestamps).
 - French calls: show the French transcript and the English summary (`summary_en`) side by side.
+- Tool calls come from the ElevenLabs transcript shape (`tool_calls` joined to `tool_results` by `request_id`). Parse defensively: bad JSON in `params_as_json`, an unknown criteria id, or an old call record with none of the new fields must still render (tested in `toolCalls.test.ts`). `unknown` report-card results are not failures.
 - A call whose webhook has not arrived yet shows "transcript pending" (it arrives within 60 seconds), then fills in via SSE.
 
 **Test mode**
@@ -249,8 +250,8 @@ All four are **server tools** (`POST`, JSON body) to `https://pipeguard.blunelab
 - The backend resolves "vendredi", "demain", "lundi prochain" against the simulated calendar. Include French lines in the LLM test (scenario 7).
 
 ### 5.8 Backups
-- **Export the agent config** (`GET /v1/convai/agents/{agent_id}`) to `infra/elevenlabs/agent_config.json` with secrets removed, at the 7 PM freeze. If an agent breaks at 3 AM, you can rebuild it in another account from this.
-- **Freeze the agent** at 7 PM. Late "small prompt tweaks" are how demos break.
+- **Export the agent config** (`GET /v1/convai/agents/{agent_id}`) to `infra/elevenlabs/agent_config.json` with secrets removed, now and again after any big change. If an agent breaks at 3 AM, you can rebuild it from the export.
+- **Re-test after every agent change.** There is no freeze, but each prompt tweak needs a re-run of the evals (`docs/llm_test_runbook.md`), because late tweaks are how demos break.
 - **Laptop fallback with ElevenLabs environment variables (no second agent):** define a string variable `api_host` with `production = pipeguard.blunelabs.com` and `backup = <a quick-tunnel host, only if you ever run live voice from a laptop>`, and write every tool URL as `https://{{system__env_api_host}}/api/voice/tools/<name>` (the `https://` must come before the variable). Ebube's `answer` endpoint passes `environment=<ELEVENLABS_ENVIRONMENT>` when requesting the signed URL, so failing over is one setting. If the variable cannot be resolved the call falls back to `production`.
 - **Recorded call:** make one clean successful call and save it as `infra/recorded_call.json` (transcript with timings and the tool calls it made). Ebube's `/api/admin/simulate-call` replays it through the same code as a real call. Also keep the audio of that call and a short screen recording as a last-resort clip.
 
@@ -292,7 +293,7 @@ Wrong person; "not a good time"; no answer; very vague answers ("sometime next w
 6. Business case: first customer, 100-day pilot, pricing, scaling, versus big vendors.
 7. Close, plus ElevenLabs and NASA credits.
 - **Backup slides:** Impact tab screenshot, decision log screenshot, a still of the call, data honesty, security and read-only, risks.
-- Pull every number from Olise's `metadata.json` and the Impact tab at the end of Saturday night, not from memory. If a number changes after the freeze, change it everywhere (deck, README, submission) in one pass.
+- Pull every number from Olise's `metadata.json` and the Impact tab late, not from memory. If a number changes, change it everywhere (deck, README, submission).
 - Use real screenshots, not mock-ups.
 
 ### 6.4 Q&A prep
@@ -356,7 +357,7 @@ The organizers must approve the Option A problem statement and dataset **in writ
 - A browser `confirm()` dialog on reset (it blocks the browser).
 - Starting the voice session before the language and variables for **this** call are known.
 - Hard-coding a model id from memory instead of reading it from the dashboard.
-- Changing the agent after the 7 PM freeze.
+- Changing the agent without re-running the evals.
 - Running the LLM test in the production demo account (it spends the credits you need for the demo).
 - Numbers in the deck that do not match the Impact tab.
 - Rehearsing only the happy path. Rehearse the sensor kill, the French call, a missed call and the simulate-call fallback.

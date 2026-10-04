@@ -65,6 +65,7 @@ PipeGuard is an enterprise maintenance product with two layers:
 
 ### What goes wrong
 - A turbine wears out gradually. If no one catches it, it fails suddenly.
+- **Every day counts.** PipeGuard's warnings are measured in days of remaining life, so each day a failing unit waits in a queue is a day off its window. A surprise failure turns planned work into emergency work (premium parts, overtime, lost flow).
 - When it fails, that station stops pushing gas. Flow drops, customers and power plants downstream can lose supply, and the operator pays for emergency repairs and lost throughput.
 
 ### How it is handled today
@@ -216,11 +217,12 @@ Prairie Gas Transmission, pre-loaded. One-click login (no real accounts or multi
 |---|---|---|
 | **Fleet overview** | 5 stations, 100 turbines in red, yellow, green. Replay clock runs sensor data forward (for example, one day per second) | Looks live without real-time infrastructure |
 | **Unit detail** | Remaining life range, sensor trend chart, reason, history | Shows the engine is explainable |
-| **Weekly plan** | Which units get serviced, by whom, and why | The decision, made visible |
+| **Weekly plan** | Which units get serviced, by whom, and why. A change from a technician's call shows as **Proposed**; a manager clicks **Approve** and it becomes a work order | The decision, made visible, with a human signing off |
 | **Impact tab** | PipeGuard vs fixed schedule vs run until it breaks: breakdowns, wasted services, dollars. Sliders for crew size and breakdown cost | **Most important screen for scoring.** Judges see the decision change live |
-| **Decision log** | Every alert as a chain: sensor drift, prediction, call, technician's answer, what changed in the plan, feedback | Proves voice changes decisions |
+| **Decision log** | Every alert as a chain: sensor drift, prediction, rules check, call, technician's answer, what changed in the plan, manager approval, feedback. Each call shows the tools the agent used, any safety stop, and a 4-line report card | Proves voice changes decisions, and that it stayed on task |
 | **Roster** | Technicians: name, station, shift, phone, preferred language | Decides who gets called |
-| **Work orders** | Download this week's service list | Real enterprise feel |
+| **Work orders** | Download this week's service list (approved items only), and a one-page printable **Weekly summary** for the director | Real enterprise feel |
+| **Exports** | CSV download from Fleet (every unit), Decision log (what is on screen) and Impact (policies and assumptions), built for Excel | Managers can do their own analysis and keep records |
 | **Settings** | Crew size, costs, call rules | Shows operators stay in control |
 | **Test mode** | Fault injection: "Kill sensor" and "Corrupt sensor" for any unit; reset demo; simulate-call fallback | Proves robustness live, especially in Q&A. Kept separate from the manager's main screens |
 | **Technician phone page** | Runs on a phone browser: incoming call screen, live call, verdict buttons | Where the voice call happens in the demo |
@@ -235,7 +237,7 @@ Prairie Gas Transmission, pre-loaded. One-click login (no real accounts or multi
 | Sensor issue | Grey + wrench | Instrument check, no crew call |
 
 ### Roles
-- **Maintenance manager:** sees everything, approves plans
+- **Maintenance manager:** sees everything, approves plan changes before they become work orders
 - **Technician:** receives calls, gives feedback
 
 ---
@@ -279,6 +281,14 @@ A 30-second spoken summary for the next shift.
 - **Unclear answer:** the agent confirms back ("So Friday, correct?")
 
 These address **alarm fatigue**, a real problem in control rooms.
+
+**Safety on the call itself (ElevenLabs settings, staged and tested before they go on the demo agent):**
+- **Guardrails:** *Focus* keeps the agent on its job, *Manipulation* blocks attempts to talk it out of its rules. Our own rules code is the real gate; these are a second layer.
+- **Call report card:** after every call, four yes/no checks: asked for the earliest day, confirmed before booking, stayed on task and facts, honest about being automated. Shown in the Decision log.
+- **Retention:** call recordings and transcripts are kept 30 days at ElevenLabs. Our own decision log keeps the record.
+
+### Where PipeGuard fits in the approval process
+Real gas companies have layers of approval before a crew goes near a machine: work order approval, outage coordination, permit to work, management of change. **PipeGuard skips none of them. It starts them earlier.** It runs before the first gate: it tells the planner weeks ahead that a unit will need work, with the evidence, so the work order, outage notice and permit all happen calmly instead of in an emergency. The one gate the product shows is the first: the technician's answer makes a **Proposed** plan change, and the manager approves it. Permits and outage notices stay with the operator's people, as today.
 
 ### ElevenLabs parts used
 - **Agents platform:** the conversational voice agent, with tools that call our API
@@ -337,7 +347,10 @@ The full technical specification lives in **`techstack.md`**. This section is th
 
 - **Read-only:** PipeGuard reads sensor data. It never controls machines.
 - **Data stays with the operator:** runs inside their environment.
-- **Humans always decide:** PipeGuard recommends; managers and technicians act.
+- **Humans always decide:** PipeGuard recommends; a manager approves plan changes; technicians act. Nothing becomes a work order until a manager approves it.
+- **Rules outside the AI:** a rules check (not the AI) decides whether a call may happen; the decision log shows which checks passed.
+- **Guardrails and call report card** on every voice call (see section 8). Recordings kept 30 days.
+- **Start the approvals earlier, don't skip them:** PipeGuard feeds the normal work order, outage and permit process weeks sooner. It never replaces it.
 - **Call limits:** prevents alarm fatigue.
 
 ---
@@ -397,7 +410,7 @@ Each new customer costs less to start because the model and setup are reusable.
 |---|---|---|
 | 0:00 | Intro | Team, one line each (10 seconds) |
 | 0:10 | Problem | Compressor stations, turbines, cost of surprise failures, how it is done today. State Option A and the NASA dataset upfront |
-| 1:10 | **Live demo** | Already logged in. Fleet overview, press play, a unit turns red. Voice agent calls; a teammate answers as the technician ("not before Friday"). Plan changes on screen. Impact tab updates. Drag a slider to show it re-decide |
+| 1:10 | **Live demo** | Already logged in. Fleet overview, press play, a unit turns red. Voice agent calls; a teammate answers as the technician ("not before Friday"). Plan change shows as **Proposed**; click **Approve** (one click) and it becomes a work order. Impact tab updates. Drag a slider to show it re-decide |
 | 3:10 | Architecture and results | One diagram. Before and after: 27.5 to 14.8 cycles; headline number |
 | 4:10 | Business case and close | First customer, 100-day pilot, pricing, scaling. Closing line |
 
@@ -448,6 +461,15 @@ If the pitch is running long, skip the click: a **planted fault** in the scenari
 **"How do you know the model isn't just memorizing the engines?"**
 > "Every turbine in the demo is judged by a model that never saw it. We train on 80% of engines and predict the other 20%, rotating through all of them. Our accuracy numbers come from NASA's separate test set."
 
+**"We have layers of approval. Won't this slow things down or get blocked?"**
+> "We keep every one of them. PipeGuard doesn't authorise or do any work, and it never touches the machines. It runs before the first gate, so the work order, outage notice and permit start weeks earlier instead of in an emergency. Each day a red unit waits is a day off its remaining life."
+
+**"Who is accountable if it's wrong?"**
+> "People are. PipeGuard recommends, the manager approves, the technician decides. The decision log keeps what we recommended, on what evidence, and what everyone did."
+
+**"What stops the voice agent going off-script?"**
+> "Rules in code decide whether it may call and what it may change. On the call, ElevenLabs guardrails keep it on topic, and every call gets a four-point report card in the decision log."
+
 **"Is it secure?"**
 > "It's read-only, never touches control systems, runs inside the operator's environment, and humans make every decision."
 
@@ -467,7 +489,7 @@ If the pitch is running long, skip the click: a **planted fault** in the scenari
 | Live demo fails | Server and laptop copies, hotspot, simulate-call button, backup video |
 | Our server or its internet goes down | Laptop runs the same Docker Compose setup |
 | Live data or model hiccup mid-demo | Engine switches to pre-calculated backup predictions |
-| **Majoring on the minor:** enterprise polish eats time while the engine is unfinished | Strict build order and feature freeze (section 15) |
+| **Majoring on the minor:** enterprise polish eats time while the engine is unfinished | Strict build order, building right up to the real deadline (section 15) |
 
 ---
 
@@ -502,7 +524,7 @@ Per-person guides for builders and their coding agents are in `docs/delegation/`
 | **Sat morning** | Train models, cross-fitting, benchmark | Repo, database, seed, simulator | ElevenLabs agent answers a test call; test French |
 | **Sat 12 PM checkpoint** | Engine predicting live | Fleet page showing live predictions | Phone page rings and connects |
 | **Sat afternoon** | Scheduler, simulation, self-tuning, quality checks, feedback | Impact tab, decision log, Test mode, live updates | Voice tool endpoints, re-plan loop, guardrails, ask a Discord mentor |
-| **Sat 7 PM feature freeze** | Fix numbers only | Polish | Draft pitch and slides |
+| **Sat evening (no feature freeze)** | Keep building and integrating; pull final numbers late | Polish | Draft pitch and slides |
 | **Sat night** | Help debug | Deploy to server, test laptop backup | Full demo run with a real call; check ElevenLabs usage |
 | **Sun 8 to 10 AM** | All: 2 or 3 timed rehearsals, record backup video, screenshots | | |
 | **Sun 11 AM** | **Submit** | | |

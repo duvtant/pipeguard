@@ -8,13 +8,13 @@ Read with: `00_TEAM_CONTRACT.md` (shapes and schedule) and `03_DAVID_dashboard-v
 
 **Legend:** 🤖 AUTO = code, scripts or Claude does it · ✋ **MANUAL** = only you can do it (accounts, keys, third-party consoles, decisions, taste) · ⬜ todo · 🟦 in progress · ✅ done · ⛔ blocked
 
-**Hard anchors (Mountain Time):** Sat 12:00 PM team checkpoint · **Sat 7:00 PM feature freeze** · **Sat 11:59 PM Option A confirmation** · Sun 8 to 10 AM rehearsal and video · **Sun 11:00 AM submit** · Sun 12:00 PM hard stop.
+**Hard anchors (Mountain Time):** Sat 12:00 PM team checkpoint · **no feature freeze (David's decision, Oct 3: keep building until the real deadline)** · **Sat 11:59 PM Option A confirmation** · Sun 8 to 10 AM rehearsal and video · **Sun 11:00 AM submit** · Sun 12:00 PM hard stop
 
 ---
 
 ## Task tracker (kept current as work happens)
 
-> Claude updates this table while working. If a task's status here disagrees with reality, tell Claude and it gets fixed. Last updated: **Sat Oct 3, 04:10 AM MDT** (Phase 1 complete; Phase 2 is yours to start).
+> Claude updates this table while working. If a task's status here disagrees with reality, tell Claude and it gets fixed. Last updated: **Sat Oct 3** (Phase 3 built; Track D added: approval step, ElevenLabs guardrails, report card, retention, full call record. Config changes staged, not pushed; documents aligned). Gate 3 still waits on you.
 
 ### Phase 1: Setup and foundations
 | ID | Task | Who | Status | Notes |
@@ -38,28 +38,49 @@ Read with: `00_TEAM_CONTRACT.md` (shapes and schedule) and `03_DAVID_dashboard-v
 ### Phase 2: Design (you lead)
 | ID | Task | Who | Status | Notes |
 |---|---|---|---|---|
-| P2.1 | **You design** Fleet, Impact and the phone page, plus the status system: hierarchy, layout, look. Any tool you like | ✋ | ⬜ | Claude does not make taste decisions |
-| P2.2 | Starting points on request only: screen briefs, directions, references | 🤖 | ⬜ | Only if you ask |
-| **G1** | **Gate 1: you hand Claude the spec** (direction, status system, layouts) | ✋ | ⬜ | |
-| P2.3 | Design tokens in code from your spec; style-guide route | 🤖 | ⬜ | No UI library is required |
-| P2.4 | Fleet, Impact and phone page built to your spec on fixtures (the vertical slice) | 🤖 | ⬜ | |
-| P2.5 | Accessibility baseline: contrast, colour-blind check, text size | 🤖 | ⬜ | |
-| **G2** | **Gate 2: you review the three screens; the design system is frozen** | ✋ | ⬜ | |
-| **CP2** | **Checkpoint 2** | | ⬜ | |
+| P2.1 | **You design** Fleet, Impact and the phone page, plus the status system: hierarchy, layout, look. Any tool you like | ✋ | ✅ | Done: Mercury language, Figtree, three gradients. Mockup: `docs/design/preview/mercury-explorer.html` |
+| P2.2 | Starting points on request only: screen briefs, directions, references | 🤖 | ✅ | Mobbin research, UX flows, and `docs/design/DESIGN.md` (the full spec, including the motion system) written |
+| **G1** | **Gate 1: you hand Claude the spec** (direction, status system, layouts) | ✋ | ✅ | David approved `docs/design/DESIGN.md` as the spec. Assets delivered in `docs/assets/` |
+| P2.3 | Design tokens in code from your spec; style-guide route | 🤖 | ✅ | `web/src/design/tokens.css` + `motion.ts`, Figtree, Phosphor via unplugin-icons, brand assets in `web/public`, manifest and icons. Style guide at `/design` |
+| P2.4 | Fleet, Impact and phone page built to your spec on fixtures (the vertical slice) | 🤖 | ✅ | Fleet `/`, Impact `/impact`, phone `/field/<id>` (idle, ringing, in call, after call, thanks), app shell, projector mode. Run `pnpm dev:mock`. Not in this slice: the unit slide-over (P3.11), toasts, and clock controls beyond Play/Pause (P3.1, P3.4) |
+| P2.4b | Gate 2 review round 1: layout matched to Mercury by measurement (shell, header band, margins, compact scale, lighter weights, projector zoom 1.2). See DESIGN.md 3.5 | 🤖 | ✅ | Axe still 0 violations on all 8 views, normal and projector |
+| P2.5 | Accessibility baseline: contrast, colour-blind check, text size | 🤖 | ✅ | axe-core: 0 violations on all 8 views, normal and projector. No text under 13 px, targets 40 px (44 on phone), focus ring verified, deuteranopia and greyscale checked, no horizontal overflow at 1280x720 or 360 px, reduced motion makes the call rings static |
+| **G2** | **Gate 2: you review the three screens; the design system is frozen** | ✋ | ✅ | David approved after review rounds (layout, compact scale, weights, header band, nav alignment, Regular icons). Design system frozen as DESIGN.md 3.5. Further changes need an explicit request |
+| **CP2** | **Checkpoint 2: passed** | | ✅ | Open items carried into Phase 3: unit slide-over, toasts, real data, real voice session, mobile menu below 1024 px |
 
 ### Phase 3: Build
 | ID | Task | Who | Status | Notes |
 |---|---|---|---|---|
-| P3.1 | App shell: providers, one shared event stream, mock on/off switch | 🤖 | ⬜ | Track A (screens) |
-| P3.2 | Wire Fleet, unit drawer and Impact to the data layer | 🤖 | ⬜ | Track A |
-| P3.3 | Plan, Decision log, Roster, Work orders, Settings | 🤖 | ⬜ | Track A, in the frozen design system |
-| P3.4 | Test mode (admin-gated) | 🤖 | ⬜ | Track A |
-| P3.5 | Phone page: real voice session, edge cases | 🤖 | ⬜ | Track A |
-| P3.6 | Agent test suite (14 scenarios) as code + run per candidate LLM | 🤖 | ⬜ | Track B (voice), independent of design |
-| P3.7 | Live latency calls, 5 per finalist | ✋ | ⬜ | Track B, you speak on a phone |
-| P3.8 | Pick the LLM; write `docs/llm_test_results.md`; update agent config | 🤖 + ✋ | ⬜ | Track B, you approve |
-| **G3** | **Gate 3: you review every screen once; list of fixes** | ✋ | ⬜ | |
-| P3.9 | Fix pass from Gate 3 (fixes only, no new directions) | 🤖 | ⬜ | Done before the 7 PM freeze |
+| P3.1 | App shell: providers, one shared event stream, mock on/off switch | 🤖 | ✅ | `lib/sse.ts` (dedupe by `event_id`, Last-Event-ID, catch-up, polling fallback; 7 unit tests), `lib/live.tsx` (batched cache patching), reconnecting banner, error boundary, toasts. Verified in a browser: outage then restore = 0 duplicate and 0 missing events |
+| P3.2 | Wire Fleet, unit drawer and Impact to the data layer | 🤖 | ✅ | Fleet (clock controls, counts, changed-tile pulse, memoized tiles, unreachable state), unit panel (range bar, sensors, calls, timeline), Impact (headline, default vs tuned, computed ms, assumptions, snap sliders with cancelled requests) |
+| P3.3 | Plan, Decision log, Roster, Work orders, Settings | 🤖 | ✅ | All five built, plus Sign-in. Plan blocks glide when a call changes the plan. Decision log: chains, filters, transcripts (French beside its English summary), pending state. Settings and the sensor-trend/cost-series endpoints are marked NOT IN CONTRACT |
+| P3.4 | Test mode (admin-gated) | 🤖 | ✅ | `/test`: token gate (sessionStorage), clock, kill/corrupt sensor, active faults, simulate call, tune now, hold-to-reset, phone-page links |
+| P3.5 | Phone page: real voice session, edge cases | 🤖 | ✅ | Built to the SDK 1.16 API and tested end to end against the mock (go on shift, ring, answer, call, verdict, mic denied, decline, missed). **The real ElevenLabs session is untested** until it runs against the real backend on a phone: see P4.4 |
+| P3.6 | Agent test suite (14 scenarios) as code + run per candidate LLM | 🤖 | ✅ | `infra/elevenlabs/llm_test/` (19 tests: 8 demo-critical, 5 candidate models, payloads validated offline against the ElevenLabs spec). **Run Oct 3**: see `docs/llm_test_results.md` (6,061 credits, 4.6%). Paid commands refuse without `--yes`. Runbook: `docs/llm_test_runbook.md` |
+| P3.7 | Live latency calls, 5 per finalist | 🤖 + ✋ | ✅ (partly) | Done for the finalist that matters, **by script** (`voice_call.mjs`, real calls with a synthetic caller): Gemini 3.8 Flash normal reply **median 1.20 s, worst 1.54 s** (target 1.5 / 3). Sonnet and Terra not voice-tested (not needed). **Still to do: tool-turn speed once Ebube's backend is live** (target 3 s). Cost 2,390 credits |
+| P3.8 | Pick the LLM; write `docs/llm_test_results.md`; update agent config | 🤖 + ✋ | ✅ | **Gemini 3.8 Flash (low effort) chosen**: gate 16/16, cheapest, reply speed 1.2 s. Ranking and every failure are in `docs/llm_test_results.md`; frozen protocol in `docs/llm_test_protocol.md`. Config files now carry the chosen model and effort, plus the final prompt v4. **Staged, not pushed**: you approve the push |
+| P3.10 | Interaction foundations: `motion`, `MotionConfig`, token map, `/design` showcase | 🤖 | ✅ | `motion` installed, `MotionConfig reducedMotion="user"` in `main.tsx`, tokens done in Phase 2. SlideOver and the other new components get added to `/design` as they land (not yet) |
+| P3.11 | `SlideOver` (unit panel): focus trap, inert page, focus return | 🤖 | ✅ | `components/ui/SlideOver.tsx` + `components/units/UnitPanel.tsx`. Open from any Fleet tile (`?unit=EDS-07`, deep-linkable). Tested: focus in, Tab trap, Escape, focus returns to the tile, scrim click, scroll lock, inert app, projector zoom, axe 0 violations on 5 panels. Found and fixed a real bug (deep-link open did not take focus) |
+| P3.12 | `useSkeletonSwap` + our skeletons + `Reveal` | 🤖 | ✅ | Built and used in the unit panel. Fleet and Impact first load still use plain skeletons (adopt `Reveal` there in the fix pass) |
+| P3.13 | `ValueFlash` (KPIs, stat columns, Impact figures; throttled, no direction colours) | 🤖 | ✅ | `components/ui/ValueFlash.tsx` + `hooks/useThrottledValue.ts`. Live on Fleet (KPI, plan stats, calls) and Impact (3 costs, failures caught, error). Tested: immediate first change, tint 1.2 s, screen reader hears the settled value. Two throttle bugs and a wrong-direction roll bug found and fixed. Rule: `throttle` 2000 for values pushed by the live stream; `throttle={0}` for anything the user changes (Impact slider results, buttons). Rapid changes crossfade instead of stacking. David found the tap-throttle edge case |
+| P3.14 | `ActionButton` (Simulate call, Tune now, Download; the Impact "Run simulation" button was removed because the sliders update live) | 🤖 | ✅ | `components/ui/ActionButton.tsx` + `hooks/useAsyncAction.ts`. In use: Play/Pause replay, Run simulation. Simulate call, Tune now and Download are used when Test mode and Work orders are built (P3.4, P3.3). Tested: width identical in every state, double-click sends one request, error face, still under reduced motion |
+| P3.15 | `HoldToConfirm` (Reset demo, 900 ms) | 🤖 | ✅ | `components/ui/HoldToConfirm.tsx`, shown in `/design`. Wired to `POST /api/admin/reset` when Test mode is built (P3.4). Found and fixed a bug in the original (a hold could silently fail to start): 24 of 24 holds now commit; early release, Escape, blur and tab-hide all cancel |
+| P3.16 | `NewEventsPill` + `useNewItems` (Decision log) | 🤖 | ✅ | `components/ui/NewEventsPill.tsx`, used in the Decision log (keeps your reading position, counts new events, jumps to top) |
+| P3.17 | `Segmented` (chart/table toggle) and `Slider` with detents (Impact) | 🤖 | ✅ | Segmented (sliding thumb, radiogroup, arrows/Home/End) and Slider (snap points, 22 px thumb, role=slider, projector-zoom aware) in Impact, Settings and `/design` |
+| P3.18 | `THIRD_PARTY_NOTICES.md` (interior.dev MIT) + README attribution line | 🤖 | ✅ | `THIRD_PARTY_NOTICES.md` at the repo root; README Credits updated |
+| P3.19 | Agent architecture write-up for the pitch + judge Q&A (`docs/AGENT_ARCHITECTURE.md`); show the policy gate's checks and the agent's tool calls in the Decision log; 3 more evals (19 total) | 🤖 | ✅ | Research read from primary sources (Anthropic, OpenAI, ElevenLabs). Checks and tool-call chips are live in `/log` on mock data; shapes marked NOT IN CONTRACT for Ebube |
+| P3.20 | Roster headshots: 12 prompts + `scripts/make-headshots`; Roster shows photos with letter fallback | 🤖 + ✋ | ✅ | David generated all 12; processed to 512 px JPEGs in `web/public/people/` and checked one by one. README line about AI-generated photos added |
+| P3.21 | Manager approval of plan changes ("Proposed" then "Approved"): front end + mock built; backend message for Ebube | 🤖 + ✋ | 🟦 | Dashboard turns it on only if the API sends `approval` (nothing fake otherwise). **You send** `docs/delegation/MESSAGE_TO_EBUBE.md` to Ebube. Tested end to end in the browser (Plan, Fleet, Work orders, unit panel, log, toast) |
+| P3.21b | Manager decision for a unit with no free crew (Plan page buttons: overtime crew / accept the risk) | 🤖 + ✋ | ✅ | Found by you as a dead-end "Review" button. Built, browser-tested (decide, change mind, Fleet, log, axe clean). **You send** the updated `MESSAGE_TO_EBUBE.md` |
+| P3.21c | Audit from jobs-to-be-done (`docs/pitch/JOBS_TO_BE_DONE.md`): decision card shows days, consequence and estimated money; Impact tab names today's routine as the baseline; every dollar labelled an estimate; Fleet shows decision and approval strips together; technician track record card | 🤖 | ✅ | Built and browser-tested (axe clean on Fleet, Impact, Plan, Work orders). Track record needs Ebube's new `GET /api/feedback/stats` (item 7 in `MESSAGE_TO_EBUBE.md`); card hides without it. Still open: technician recap on the phone page, weekly summary, "Today" list |
+| P3.21d | Exports for managers: CSV from Fleet (every unit), Decision log (what is on screen), Impact (policies + assumptions); printable one-page Weekly summary (`/summary`, from Work orders) | 🤖 | ✅ | Built in the dashboard from data already loaded, so **no backend work**. Excel-safe (UTF-8 BOM, formula-injection protection). Browser-tested: downloads read back, print preview is 1 A4 page. Shared button fix: green "Saved" label contrast on hover |
+| P3.22 | **C2** Turn on ElevenLabs guardrails (Focus, Manipulation) | 🤖 + ✋ | 🟦 | Staged in the config files, **not pushed**. You approve the push. Test 5 real calls in the spare account first (a guardrail can end a call). See `05_CHANGE_IMPACT_agent_hardening.md` |
+| P3.23 | **C3** Call report card: 4 success-evaluation rules on the agent | 🤖 + ✋ | 🟦 | Staged in the config files, not pushed |
+| P3.24 | **C4** Data retention 30 days (was 2 years) | 🤖 + ✋ | 🟦 | Staged in the config files, not pushed. Never use 0 (breaks the 60 s pull fallback) |
+| P3.25 | **C5** Store the full call record (tool calls, guardrail hits, report card) + show it in the Decision log | 🤖 | ✅ | Dashboard side built and browser-tested on the real ElevenLabs shape (tool chips, safety stop, report card, old records still render, axe clean). **Backend part is Ebube's, and you send** the message: `docs/delegation/MESSAGE_TO_EBUBE.md` |
+| P3.26 | **C6** Update the Overview, contract, tech spec, delegation guides and agent README so they all match | 🤖 | ✅ | Done Sat Oct 3: Overview (approval section, "start earlier, don't skip", every day counts, screens, guardrails, security, Q&A), contract, Ebube and David guides, tech spec, ElevenLabs README, runbook note, architecture status |
+| **G3** | **Gate 3: you review every screen once; list of fixes** | ✋ | 🟦 | **Waiting on you.** Test links and what to check are in the Phase 3 summary message |
+| P3.9 | Fix pass from Gate 3 (fixes only, no new directions) | 🤖 | ⬜ | Whenever you send the list; no freeze |
 | **CP3** | **Checkpoint 3** | | ⬜ | |
 
 ### Phase 4: Integrate, run in production, rehearse, submit
@@ -70,7 +91,7 @@ Read with: `00_TEAM_CONTRACT.md` (shapes and schedule) and `03_DAVID_dashboard-v
 | P4.3 | ElevenLabs production wiring: tool secret, environment variable, webhook | ✋ | ⬜ | |
 | P4.4 | Real call from a real phone over the public URL | ✋ | ⬜ | |
 | P4.5 | Record the real call → `infra/recorded_call.json` | 🤖 + ✋ | ⬜ | |
-| P4.6 | Freeze and export the agent config at 7 PM | 🤖 + ✋ | ⬜ | |
+| P4.6 | Export a backup of the agent config (whenever it is in a good state) | 🤖 + ✋ | ⬜ | No freeze; re-run the evals after any agent change |
 | P4.7 | Fill README and deck numbers from final results | 🤖 + ✋ | ⬜ | Needs Olise |
 | P4.8 | Screenshots, architecture image, backup video | ✋ | ⬜ | |
 | P4.9 | Rehearse 2 to 3 times, timed | ✋ | ⬜ | |
@@ -224,19 +245,19 @@ Contrast check and a colour-blind simulation of the status colours, keyboard foc
 Look at them on the **real phone** and on a **large monitor or projector** at arm's length. If you cannot read a number from three metres, it fails. After Gate 2, colours, type scale and layout patterns are fixed; new screens use them instead of inventing new ones.
 
 ### ✅ CHECKPOINT 2
-- [ ] You designed the three screens and approved both gates
-- [ ] The style-guide route shows every token
-- [ ] Fleet, Impact and the phone page are built to your spec on fixtures and handle every state in it
-- [ ] Every status is distinguishable without colour; contrast passes
-- [ ] They are readable at 1280x720 and on a phone
-- [ ] You would put a screenshot of Fleet and Impact on a slide as is
+- [x] You designed the three screens and approved both gates
+- [x] The style-guide route shows every token (`/design`)
+- [x] Fleet, Impact and the phone page are built to your spec on fixtures (loading states yes; error and empty states are Phase 3 polish)
+- [x] Every status is distinguishable without colour; contrast passes (axe, 0 violations)
+- [x] They are readable at 1280x720 and on a phone (layout checked at 1280, 1440, 1728, 1920; projector mode scales the UI 1.2x; a 3 m test on a real projector is still worth doing before the pitch)
+- [x] You would put a screenshot of Fleet and Impact on a slide as is (David: "i like it")
 
 ---
 
 # PHASE 3: Build
 
 **Goal:** the rest of the product, built inside the frozen design system, plus the voice agent's model chosen by measurement. Two tracks run in parallel, and Track B never waits on design.
-**Target window:** about noon to 6 PM Saturday, with the fix pass finished before the **7 PM freeze**.
+**Target window:** about noon to 6 PM Saturday, with the fix pass done whenever Gate 3's list arrives (no freeze).
 
 ## Track A: screens and data layer
 
@@ -268,19 +289,72 @@ Create the 14 scenarios from `techstack.md` §12.10 in the CLI's test configs (o
 ### P3.8 🤖 + ✋ pick the model
 Apply the decision rule in `techstack.md` §12.10 (at least 95% on the demo-critical tests, latency targets, cheapest survivor). Write `docs/llm_test_results.md`, set the model and `reasoning_effort` in the agent config, `agents push`. ✋ **MANUAL:** you approve the choice. Never `reasoning_effort: max` on a live call (Luna at max was measured at about 80 to 110 s to first answer token).
 
+## Track C: interaction components (spec: `docs/design/COMPONENTS.md`)
+
+Eight components adapted from [interior.dev](https://www.interior.dev/) (MIT). Copy and restyle, never install; the originals are reference copies in `docs/design/vendor/interior/`. **Order matters:** P3.10 first, then P3.11 (the unit panel in P3.2 is built on it), then P3.12 and P3.13 (used inside it), then the rest. P3.2 and P3.4 should use these components rather than plain elements, so schedule Track C before or alongside them.
+
+### P3.10 🤖 foundations
+Install `motion`, wrap the app in `<MotionConfig reducedMotion="user">`, apply the class-to-token map from `COMPONENTS.md` §2, add the `/design` showcase route that shows each component in every state (normal and reduced motion).
+
+### P3.11 🤖 `SlideOver`
+From `drawer.tsx`. Width 430, `headerExtra` slot for the status pill, `footerBleed` for the Calm strip, z-30, no blur, spring `{380, 34}`. **Why:** it already has a focus trap, focus return, inert siblings and scroll lock, which are the hardest parts to hand-roll.
+
+### P3.12 🤖 skeletons
+Keep only the `useSkeletonSwap` hook (`delay` 120, `minVisible` 380); build our own `Skeleton` shapes and a grid-stack `Reveal` cross-fade (no fixed height, no blur, no scale). Used on first load of Fleet, Impact and the unit panel.
+
+### P3.13 🤖 `ValueFlash`
+From `value-flash.tsx`. Accent-soft tint (not green or red: a rising number is not "good" here), inherit font size, raised `unit`, no blur, input throttled to one change per 2 s, about 12 instances, **never the 100 tiles**.
+
+### P3.14 🤖 `ActionButton`
+From `loading-button.tsx`. Variants `primary` and `chip`, an `icon` prop, success `--ok`, error `--risk`, fixed width across idle, pending, success and error, a spinner that loops only while pending.
+
+### P3.15 🤖 `HoldToConfirm`
+From `hold-to-confirm.tsx`. 900 ms, `--risk` fill, "Hold to reset demo" / "Demo reset", calls `POST /api/admin/reset`. Test mode never uses `window.confirm` (see P3.4).
+
+### P3.16 🤖 `NewEventsPill`
+From `new-items-pill.tsx`. Decision log, `anchor="top"`, accent pill "N new events". De-duplicate by `event_id` before counting, so SSE replays do not inflate the number.
+
+### P3.17 🤖 `Segmented` and `Slider`
+From `segmented-control.tsx` (white thumb with an accent ring, icon options, no inversion mask) and `slider-detents.tsx` (22 px thumb, 14 px labels, crew detents 0 to 5, a "default" detent on the cost sliders, ~200 ms debounce with `AbortController` upstream).
+**Cut order if time runs short:** Slider (use a styled range input), then Segmented (two plain buttons), then NewEventsPill. **Never cut** SlideOver, ActionButton, HoldToConfirm.
+
+### P3.18 🤖 attribution
+Add `THIRD_PARTY_NOTICES.md` with the full MIT text and the list of adapted files, keep the one-line notice at the top of each adapted file, and add a line to the README's originality section. The handbook requires attribution for open-source code.
+
+## Track D: agent hardening and approval (ElevenLabs features, our approval step)
+
+Why: ElevenLabs already provides safety guardrails, a per-call report card, a per-call activity record and retention controls. We turn those on instead of building them. We build only what they do not have: the manager approval step, the "should we call at all?" rules, the whole-story activity log, and escalation (their transfer works on phone lines only).
+**Read first:** `docs/delegation/05_CHANGE_IMPACT_agent_hardening.md` (every file each change touches, what could break, how we check).
+
+### P3.21 Manager approval (front end done, backend with Ebube)
+See `MESSAGE_TO_EBUBE.md`. The UI only appears if the API sends `approval`.
+
+**Rule:** every backend request goes into the one file `docs/delegation/MESSAGE_TO_EBUBE.md` (add an item, bump its version and changelog). Do not create new message files.
+
+### P3.22 to P3.24 Agent settings (staged, not pushed)
+Edit `platform_settings` in **both** config files (they must stay identical), then, only after David approves: stage in the spare account, make 5 real calls with the demo script, then `elevenlabs agents push` to the demo agent. If a guardrail ends a call by mistake, switch it off. Our own rules gate protects the actions either way.
+
+### P3.25 Show the full call record
+The log already shows the policy gate's checks and the tool calls. Added: the report-card result per call and any guardrail that fired.
+
+### P3.26 Documents
+Overview, contract, techstack, the Ebube and David guides, the agent README and the architecture doc.
+
 ## Review and fixes
 
 ### ✋ **Gate 3: you review every screen once.**
 You look through the full product on the real phone and on a large display and write down what is wrong. This is a review of the system you already approved, so expect fixes (alignment, wording, a missing state), **not** new directions.
 
 ### P3.9 🤖 fix pass
-Apply Gate 3's list. Finish before the 7 PM freeze. After the freeze, only bug fixes.
+Apply Gate 3's list. There is no feature freeze; keep building until the real deadline, but re-test after changes.
 
 ### ✅ CHECKPOINT 3
 - [ ] Every page renders from mocks with no console errors; `pnpm build` passes
 - [ ] No page invents its own colours, type sizes or spacing outside the design system
 - [ ] The phone page shows all four states, and a real voice session works with a hand-minted signed URL
 - [ ] SSE mock: killing and restoring the stream resumes with no duplicate or missing events
+- [ ] Track D: the approval step, the report card and the guardrails are working end to end **or** switched off cleanly (nothing half-on); the staging calls were made before any push to the demo agent
+- [ ] The interaction components pass the acceptance list in `COMPONENTS.md` §8 (all states in `/design`, keyboard-only walkthrough, no `dark:` / `filter: blur` / stone colours left, `THIRD_PARTY_NOTICES.md` present)
 - [ ] Impact sliders drag smoothly with no out-of-order results (try 20 fast drags)
 - [ ] `docs/llm_test_results.md` exists, with the winner and the numbers; the production agent uses it
 - [ ] Gate 3's list is cleared or consciously deferred
@@ -290,7 +364,7 @@ Apply Gate 3's list. Finish before the 7 PM freeze. After the freeze, only bug f
 # PHASE 4: Integrate, run in production, rehearse, submit
 
 **Goal:** the real stack, the real call, the real numbers, a recorded backup, and the submission sent. Parts of this wait on Olise and Ebube; start each item the moment its dependency lands.
-**Target window:** integration from the 12 PM checkpoint onward as pieces arrive; freeze at 7 PM; Saturday night full run; Sunday 8 to 10 AM rehearsal; **11 AM submit**.
+**Target window:** integration from the 12 PM checkpoint onward as pieces arrive; no freeze;
 
 ### P4.1 🤖 switch to the real API
 Turn `VITE_MOCK` off, run `pnpm gen:api` against Ebube's `/openapi.json`, replace the hand-written types, fix any drift between fixtures and reality. Anything missing goes to Ebube immediately, not at 6 PM.
@@ -311,8 +385,8 @@ Point `/field` at the real `stream`, `answer`, `decline` and `feedback` endpoint
 **Why:** the safety net. If ElevenLabs or the Wi-Fi fails on stage, **Simulate call** replays this recording through the same code.
 **Do:** make one clean successful call; 🤖 export its transcript and tool calls (`GET /v1/convai/conversations/{id}`) into `infra/recorded_call.json`; ✋ confirm Ebube's `simulate-call` produces the same log entries as the real call.
 
-### P4.6 🤖 + ✋ freeze at 7 PM
-`elevenlabs agents pull`, commit `agent_configs/` and the exported config (no secrets). ✋ **MANUAL:** agree with the team that the agent prompt, scenario and model files are frozen. Late "small tweaks" are how demos break.
+### P4.6 🤖 + ✋ export an agent backup
+`elevenlabs agents pull`, commit `agent_configs/` and the exported config (no secrets). ✋ **MANUAL:** nothing is frozen. After any change to the agent prompt, scenario or model files, re-run the evals and the tests before relying on it.
 
 ### P4.7 🤖 + ✋ fill the numbers
 **Why:** a README or deck number that differs from the Impact tab costs credibility.

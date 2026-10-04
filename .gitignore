@@ -45,3 +45,16 @@ docs/*.pdf
 .cline/
 .trae/
 .aider*
+
+# Local-only material (decided Oct 3): raw test output with account details, large source images, private notes and internal reviews
+infra/elevenlabs/llm_test/results/
+infra/elevenlabs/llm_test/test_ids.json
+docs/assets/headshots-src/
+docs/assets/generation.json
+THIRD_PARTY_NOTICES.md
+docs/AGENT_ARCHITECTURE.md
+docs/pitch/
+docs/delegation/05_CHANGE_IMPACT_agent_hardening.md
+docs/delegation/06_BRANCH_REVIEW.md
+docs/delegation/07_MODEL_REVIEW.md
+docs/delegation/08_STATUS_AND_REMAINING.md
