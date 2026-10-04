@@ -1,0 +1,62 @@
+[
+  {
+    "id": 1,
+    "unit_id": "EDS-07",
+    "station_code": "EDS",
+    "planned_day": 32,
+    "planned_date": "2026-11-06",
+    "technician_id": 3,
+    "technician_name": "Marc Tremblay",
+    "expected_saving": 104000,
+    "reason": "High-pressure compressor outlet temperature has been rising for 6 days",
+    "state": "planned"
+  },
+  {
+    "id": 2,
+    "unit_id": "GPR-02",
+    "station_code": "GPR",
+    "planned_day": 32,
+    "planned_date": "2026-11-06",
+    "technician_id": 8,
+    "technician_name": "Chris Lavoie",
+    "expected_saving": 152000,
+    "reason": "High-pressure compressor outlet pressure has been rising for 9 days",
+    "state": "planned"
+  },
+  {
+    "id": 3,
+    "unit_id": "HIN-04",
+    "station_code": "HIN",
+    "planned_day": 33,
+    "planned_date": "2026-11-07",
+    "technician_id": 4,
+    "technician_name": "Jordan Cardinal",
+    "expected_saving": 136000,
+    "reason": "High-pressure compressor static pressure has been rising for 8 days",
+    "state": "planned"
+  },
+  {
+    "id": 4,
+    "unit_id": "WHT-17",
+    "station_code": "WHT",
+    "planned_day": 34,
+    "planned_date": "2026-11-08",
+    "technician_id": 6,
+    "technician_name": "Luc Gagnon",
+    "expected_saving": 90000,
+    "reason": "Low-pressure turbine outlet temperature has been rising for 5 days",
+    "state": "planned"
+  },
+  {
+    "id": 5,
+    "unit_id": "WHT-03",
+    "station_code": "WHT",
+    "planned_day": 35,
+    "planned_date": "2026-11-09",
+    "technician_id": 6,
+    "technician_name": "Luc Gagnon",
+    "expected_saving": 120000,
+    "reason": "Fan speed has been rising for 7 days",
+    "state": "planned"
+  }
+]

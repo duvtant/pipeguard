@@ -1,0 +1,134 @@
+[
+  {
+    "id": 1,
+    "name": "Sam Whitford",
+    "station_code": "EDS",
+    "station": "Edson",
+    "shift": "day",
+    "language": "en",
+    "is_backup": false,
+    "online": true,
+    "field_page_id": "t-mock-1"
+  },
+  {
+    "id": 2,
+    "name": "Priya Nair",
+    "station_code": "EDS",
+    "station": "Edson",
+    "shift": "night",
+    "language": "en",
+    "is_backup": true,
+    "online": false,
+    "field_page_id": "t-mock-2"
+  },
+  {
+    "id": 3,
+    "name": "Marc Tremblay",
+    "station_code": "EDS",
+    "station": "Edson",
+    "shift": "day",
+    "language": "fr",
+    "is_backup": false,
+    "online": true,
+    "field_page_id": "t-mock-3"
+  },
+  {
+    "id": 4,
+    "name": "Jordan Cardinal",
+    "station_code": "HIN",
+    "station": "Hinton",
+    "shift": "day",
+    "language": "en",
+    "is_backup": false,
+    "online": false,
+    "field_page_id": "t-mock-4"
+  },
+  {
+    "id": 5,
+    "name": "Aisha Bello",
+    "station_code": "HIN",
+    "station": "Hinton",
+    "shift": "night",
+    "language": "en",
+    "is_backup": true,
+    "online": false,
+    "field_page_id": "t-mock-5"
+  },
+  {
+    "id": 6,
+    "name": "Luc Gagnon",
+    "station_code": "WHT",
+    "station": "Whitecourt",
+    "shift": "day",
+    "language": "fr",
+    "is_backup": false,
+    "online": false,
+    "field_page_id": "t-mock-6"
+  },
+  {
+    "id": 7,
+    "name": "Dana Kowalski",
+    "station_code": "WHT",
+    "station": "Whitecourt",
+    "shift": "night",
+    "language": "en",
+    "is_backup": true,
+    "online": false,
+    "field_page_id": "t-mock-7"
+  },
+  {
+    "id": 8,
+    "name": "Chris Lavoie",
+    "station_code": "GPR",
+    "station": "Grande Prairie",
+    "shift": "day",
+    "language": "en",
+    "is_backup": false,
+    "online": false,
+    "field_page_id": "t-mock-8"
+  },
+  {
+    "id": 9,
+    "name": "Mei Lin Zhao",
+    "station_code": "GPR",
+    "station": "Grande Prairie",
+    "shift": "night",
+    "language": "en",
+    "is_backup": true,
+    "online": false,
+    "field_page_id": "t-mock-9"
+  },
+  {
+    "id": 10,
+    "name": "Tom Redcrow",
+    "station_code": "GPR",
+    "station": "Grande Prairie",
+    "shift": "day",
+    "language": "en",
+    "is_backup": false,
+    "online": false,
+    "field_page_id": "t-mock-10"
+  },
+  {
+    "id": 11,
+    "name": "Elena Petrova",
+    "station_code": "DRH",
+    "station": "Drumheller",
+    "shift": "day",
+    "language": "en",
+    "is_backup": false,
+    "online": false,
+    "field_page_id": "t-mock-11"
+  },
+  {
+    "id": 12,
+    "name": "Omar Haddad",
+    "station_code": "DRH",
+    "station": "Drumheller",
+    "shift": "night",
+    "language": "en",
+    "is_backup": true,
+    "online": false,
+    "field_page_id": "t-mock-12"
+  }
+]

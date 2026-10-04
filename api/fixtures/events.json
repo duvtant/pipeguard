@@ -1,0 +1,162 @@
+[
+  {
+    "event_id": 801,
+    "type": "sensor_issue",
+    "sim_day": 22,
+    "unit_id": "HIN-12",
+    "title": "Sensor offline",
+    "detail": "Fan speed sensor on HIN-12 stopped reporting. Instrument check requested, no crew call.",
+    "severity": "warning",
+    "payload": {
+      "sensor": "s8",
+      "flag_type": "sensor_offline"
+    }
+  },
+  {
+    "event_id": 802,
+    "type": "failure",
+    "sim_day": 24,
+    "unit_id": "GPR-15",
+    "title": "Unit failed",
+    "detail": "GPR-15 failed in service before a crew could reach it.",
+    "severity": "critical",
+    "payload": {}
+  },
+  {
+    "event_id": 803,
+    "type": "feedback_received",
+    "sim_day": 26,
+    "unit_id": "WHT-09",
+    "title": "Feedback received",
+    "detail": "Technician verdict: looks fine. Counted as a false alarm.",
+    "severity": "info",
+    "payload": {
+      "verdict": "looks_fine"
+    }
+  },
+  {
+    "event_id": 804,
+    "type": "threshold_adjusted",
+    "sim_day": 26,
+    "unit_id": null,
+    "title": "Threshold adjusted",
+    "detail": "Hit rate over the last 10 verdicts fell to 50%. Alert threshold raised from 0.50 to 0.55.",
+    "severity": "info",
+    "payload": {
+      "old": 0.5,
+      "new": 0.55
+    }
+  },
+  {
+    "event_id": 805,
+    "type": "status_change",
+    "sim_day": 27,
+    "unit_id": "HIN-04",
+    "title": "Status changed",
+    "detail": "HIN-04 moved from watch to at risk.",
+    "severity": "warning",
+    "payload": {}
+  },
+  {
+    "event_id": 806,
+    "type": "status_change",
+    "sim_day": 28,
+    "unit_id": "EDS-07",
+    "title": "Status changed",
+    "detail": "EDS-07 moved from watch to at risk.",
+    "severity": "warning",
+    "payload": {}
+  },
+  {
+    "event_id": 807,
+    "type": "manager_alert",
+    "sim_day": 29,
+    "unit_id": "EDS-14",
+    "title": "Needs manager decision",
+    "detail": "EDS-14 may fail before any crew slot opens (6 to 16 days left). A manager needs to decide.",
+    "severity": "critical",
+    "payload": {}
+  },
+  {
+    "event_id": 808,
+    "type": "sensor_issue",
+    "sim_day": 30,
+    "unit_id": "WHT-03",
+    "title": "Sensor offline",
+    "detail": "Corrected fan speed sensor on WHT-03 stopped reporting. The unit stays at risk; instrument check requested.",
+    "severity": "warning",
+    "payload": {
+      "sensor": "s13",
+      "flag_type": "sensor_offline"
+    }
+  },
+  {
+    "event_id": 809,
+    "type": "call_requested",
+    "sim_day": 30,
+    "unit_id": "EDS-07",
+    "title": "Call requested",
+    "detail": "Calling Marc Tremblay about EDS-07.",
+    "severity": "info",
+    "payload": {
+      "technician_id": 3,
+      "call_request_id": 41
+    }
+  },
+  {
+    "event_id": 810,
+    "type": "call_answered",
+    "sim_day": 31,
+    "unit_id": "EDS-07",
+    "title": "Call answered",
+    "detail": "Marc Tremblay answered. The call is in French.",
+    "severity": "info",
+    "payload": {
+      "call_request_id": 41
+    }
+  },
+  {
+    "event_id": 811,
+    "type": "constraint_added",
+    "sim_day": 31,
+    "unit_id": "EDS-07",
+    "title": "Constraint added",
+    "detail": "Marc Tremblay cannot service EDS-07 before day 32 (Friday).",
+    "severity": "info",
+    "payload": {
+      "earliest_day": 32
+    }
+  },
+  {
+    "event_id": 812,
+    "type": "plan_changed",
+    "sim_day": 31,
+    "unit_id": "EDS-07",
+    "title": "Plan changed",
+    "detail": "EDS-07 moved to day 32 (technician unavailable before Friday).",
+    "severity": "info",
+    "payload": {
+      "changes": [
+        {
+          "kind": "moved",
+          "unit_id": "EDS-07",
+          "old_day": 31,
+          "new_day": 32
+        }
+      ]
+    }
+  },
+  {
+    "event_id": 813,
+    "type": "call_summary",
+    "sim_day": 31,
+    "unit_id": "EDS-07",
+    "title": "Call summary",
+    "detail": "Marc cannot service EDS-07 before Friday. The plan moved EDS-07 to day 32.",
+    "severity": "info",
+    "payload": {
+      "call_id": 1,
+      "call_request_id": 41
+    }
+  }
+]
