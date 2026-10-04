@@ -516,7 +516,7 @@ if settings.mock_api:
 
 else:
     # Real mode. Routers are added here as they are built.
-    from api.routers import clock, events, field, fleet, health, plan, voice, webhooks
+    from api.routers import admin, clock, events, field, fleet, health, plan, simulate, testmode, voice, webhooks
     app.include_router(field.router)
     app.include_router(voice.router)
     app.include_router(webhooks.router)
@@ -527,3 +527,6 @@ else:
     app.include_router(plan.router)
     app.include_router(events.router)
     app.include_router(clock.router)
+    app.include_router(simulate.router)
+    app.include_router(testmode.router)
+    app.include_router(admin.router)

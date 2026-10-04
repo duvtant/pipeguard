@@ -79,6 +79,15 @@ if "app.include_router(fleet.router)" not in src:
         "    app.include_router(clock.router)\n"))
     done.append("read routers, real health")
 
+if "admin.router" not in src:
+    old = "    from api.routers import clock, events, field, fleet, health, plan, voice, webhooks\n"
+    inc = "    app.include_router(clock.router)\n"
+    if old not in src or inc not in src:
+        raise SystemExit("could not find the read router lines in api/main.py")
+    src = src.replace(old, "    from api.routers import admin, clock, events, field, fleet, health, plan, simulate, testmode, voice, webhooks\n")
+    src = src.replace(inc, inc + "    app.include_router(simulate.router)\n    app.include_router(testmode.router)\n    app.include_router(admin.router)\n")
+    done.append("simulate, test mode, admin routers")
+
 if done:
     path.write_text(src, encoding="utf-8")
     print("patched api/main.py:", ", ".join(done))

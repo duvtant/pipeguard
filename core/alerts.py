@@ -218,6 +218,15 @@ def sweep_once() -> int:
         return sweep_expired(s)
 
 
+def _warm_impact() -> None:
+    """Load the cross-fitted predictions and memoise the default Impact positions. Not fatal if the file is absent."""
+    try:
+        from core.impact import warm
+        warm()
+    except Exception as exc:
+        log.warning("Impact warm-up skipped (%s): /api/simulate answers 503 until the data is there", exc)
+
+
 async def sweeper_loop(interval: float = 1.0) -> None:
     """Background task started by the API: expires rings every second and, in a child task, pulls call
     transcripts the webhook never delivered. A failed tick is logged and retried, never fatal."""
@@ -232,6 +241,7 @@ async def sweeper_loop(interval: float = 1.0) -> None:
         await asyncio.to_thread(warm_up)  # so the first voice call does not pay the 1.2 s engine import
     except Exception:
         log.exception("replan warm-up failed (voice re-plans will fall back to the delayed-update sentence)")
+    asyncio.create_task(asyncio.to_thread(_warm_impact))  # in the background: the sweeper must not wait for it
     pull = asyncio.create_task(pull_loop())
     try:
         while True:
