@@ -86,12 +86,12 @@ Read with: `00_TEAM_CONTRACT.md` (shapes and schedule) and `03_DAVID_dashboard-v
 ### Phase 4: Integrate, run in production, rehearse, submit
 | ID | Task | Who | Status | Notes |
 |---|---|---|---|---|
-| P4.1 | Switch mocks off, regenerate types from the real API, fix shape drift | 🤖 | ⬜ | Needs Ebube's API |
-| P4.2 | Real event stream and field endpoints | 🤖 | ⬜ | Needs Ebube |
-| P4.3 | ElevenLabs production wiring: tool secret, environment variable, webhook | ✋ | ⬜ | |
-| P4.4 | Real call from a real phone over the public URL | ✋ | ⬜ | |
-| P4.5 | Record the real call → `infra/recorded_call.json` | 🤖 + ✋ | ⬜ | |
-| P4.6 | Export a backup of the agent config (whenever it is in a good state) | 🤖 + ✋ | ⬜ | No freeze; re-run the evals after any agent change |
+| P4.1 | Switch mocks off, regenerate types from the real API, fix shape drift | 🤖 | ✅ | Dashboard and phone page run on the real API on the deployed server; decimals, duplicate plan rows and toast flood fixed on the dashboard side |
+| P4.2 | Real event stream and field endpoints | 🤖 | ✅ | Live stream, field stream and ring tested on the real domain |
+| P4.3 | ElevenLabs production wiring: tool secret, environment variable, webhook | ✋ | ✅ | Webhook enabled and delivering (first real delivery Oct 4), tool secret accepted on a real call, signed session link works, staged agent settings pushed |
+| P4.4 | Real call from a real phone over the public URL | ✋ | ✅ | **Done Oct 4:** real phone call to Jordan (HIN-02), booked Friday (day 39), all 4 report-card checks passed, reply about 1.4 s, tool step about 1.6 s. Open issue: crackly audio on the phone (ElevenLabs's own recording is clean, so likely delivery over WebSocket; try laptop, then WebRTC). Page bug found and fixed (late library error showed "Something went wrong") |
+| P4.5 | Record the real call → `infra/recorded_call.json` | 🤖 + ✋ | 🟦 | The real call's transcript, tool calls and report card are stored in the database (conversation `conv_3801m4358rcke13bgsthz8sj48az`) and the recording is on ElevenLabs. Still to do: export it to `infra/recorded_call.json` if the staged fallback should replay a real call |
+| P4.6 | Export a backup of the agent config (whenever it is in a good state) | 🤖 + ✋ | ✅ | Repo config files equal the live agent (verified before and after the push); the pre-push live config is backed up locally |
 | P4.7 | Fill README and deck numbers from final results | 🤖 + ✋ | ⬜ | Needs Olise |
 | P4.8 | Screenshots, architecture image, backup video | ✋ | ⬜ | |
 | P4.9 | Rehearse 2 to 3 times, timed | ✋ | ⬜ | |
