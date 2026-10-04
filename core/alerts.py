@@ -199,6 +199,20 @@ def sweep_expired(s: Session, limit: int = 50) -> int:
     return sum(miss_call(s, i, "expired") for i in ids)
 
 
+def on_engine_tick(sim_day: int) -> None:
+    """Called by the engine after every tick (engine/pg_store.py after_tick). Rings whoever the guardrails allow.
+
+    Never raises: a bug in call policy must not stop the fleet from updating.
+    """
+    try:
+        with session_scope() as s:
+            res = create_call_requests(s, sim_day)
+        if res["created"]:
+            log.info("day %s: rang for call requests %s", sim_day, res["created"])
+    except Exception:
+        log.exception("on_engine_tick failed on day %s", sim_day)
+
+
 def sweep_once() -> int:
     with session_scope() as s:
         return sweep_expired(s)
@@ -213,6 +227,11 @@ async def sweeper_loop(interval: float = 1.0) -> None:
         await asyncio.to_thread(ensure_columns)  # databases created before a model change get the new columns
     except Exception:
         log.exception("ensure_columns failed")
+    try:
+        from core.replan import warm_up
+        await asyncio.to_thread(warm_up)  # so the first voice call does not pay the 1.2 s engine import
+    except Exception:
+        log.exception("replan warm-up failed (voice re-plans will fall back to the delayed-update sentence)")
     pull = asyncio.create_task(pull_loop())
     try:
         while True:

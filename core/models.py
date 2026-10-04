@@ -93,7 +93,7 @@ class QualityFlag(SQLModel, table=True):
     sensor: str
     flag_type: str                     # sensor_offline | sensor_stuck | sensor_spike | sensor_out_of_range
     resolved_day: Optional[int] = None
-    detail: str = ""                   # NEW: human-readable note from the quality check
+    detail: str = Field(default="", sa_column_kwargs={"server_default": ""})  # note from the quality check
     # Idempotency: at most one OPEN flag per (unit, sensor, type).
     __table_args__ = (
         Index("uq_open_quality_flag", "unit_id", "sensor", "flag_type",
@@ -137,7 +137,7 @@ class PlanItem(SQLModel, table=True):
     unit_id: str = Field(index=True)
     planned_day: int
     technician_id: Optional[int] = None
-    crew: int = 0                      # NEW: 0-based crew slot from the scheduler; API maps it to a technician
+    crew: int = Field(default=0, sa_column_kwargs={"server_default": "0"})  # 0-based crew slot
     expected_saving: float = 0.0
     reason: str = ""
     state: str = "planned"             # planned | done | blocked | needs_manager_decision
