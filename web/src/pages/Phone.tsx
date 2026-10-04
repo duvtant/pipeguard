@@ -118,6 +118,8 @@ function PhoneApp() {
     } catch { setMic('denied') }
   }
 
+  // True once the voice session has connected. After that, a library error must not throw away a call that went fine (see onError below).
+  const connectedOnce = useRef(false)
   const post = (path: string, body: unknown) => api(`/field/${fieldPageId}/${path}`, { method: 'POST', body: JSON.stringify(body) }).catch(() => undefined)
   const toProblem = (msg: string) => { stopRinging(); releaseWake(); setBusy(false); setProblem(msg); setPhase('problem') }
 
@@ -132,11 +134,11 @@ function PhoneApp() {
       if (res.signed_url.startsWith('wss://mock.invalid')) { // the mock backend hands out a fake URL: play a scripted call instead
         const m = await import('@/mocks/fixtures/ring'); simScript.current = m.MOCK_TRANSCRIPT; setSimulated(true); setPhase('incall'); return
       }
-      setSimulated(false)
+      setSimulated(false); connectedOnce.current = false
       startSession({
         signedUrl: res.signed_url, dynamicVariables: res.dynamic_variables, overrides: { agent: { language: res.language } },
         onConnect: () => {
-          setPhase('incall'); void post('conversation', { call_request_id: callRequest.current, conversation_id: getId() })
+          connectedOnce.current = true; setPhase('incall'); void post('conversation', { call_request_id: callRequest.current, conversation_id: getId() })
           void (navigator as unknown as { wakeLock?: { request: (t: 'screen') => Promise<{ release: () => Promise<void> }> } }).wakeLock?.request('screen').then((l) => { wakeLock.current = l }).catch(() => {})
         },
         onDisconnect: (d?: { reason?: string }) => {
@@ -144,7 +146,10 @@ function PhoneApp() {
           if (d?.reason === 'error' && !endedByUser.current) toProblem('The call dropped. Your answers are not lost: tell us what you found below.')
           else setPhase('after')
         },
-        onError: () => toProblem('We could not connect the call. Tell us what you found below, and your manager will follow up.'),
+        // Found on a real phone call (Oct 4): after the agent ended the call, the library failed while closing the connection, called onDisconnect
+        // (-> the thanks screen) and then onError, which flipped the page to "Something went wrong" although the call was perfect. Once a call has
+        // connected, an error is only logged; onDisconnect decides what the person sees. Before it connects, it is a real failure.
+        onError: (message?: string) => { if (connectedOnce.current) { console.warn('voice session error after connect (ignored):', message); return } toProblem('We could not connect the call. Tell us what you found below, and your manager will follow up.') },
         onMessage: (m: { source?: string; role?: string; message?: string }) => { if (m.message) setLines((l) => [...l, { role: (m.role ?? m.source) === 'user' ? ('user' as const) : ('agent' as const), message: m.message ?? '', time_in_call_secs: 0 }].slice(-4)) },
       })
     } catch (e) {
