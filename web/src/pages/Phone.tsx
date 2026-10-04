@@ -203,7 +203,7 @@ function PhoneApp() {
               <section className="px-1.5 pt-12 text-center" aria-live="polite">
                 <p className="m-0 text-sm text-muted">Incoming call · {LANG[ring.language]}</p>
                 <h1 className="m-0 my-1.5 text-[30px] leading-9 text-ink [font-weight:var(--w-strong)]">Unit {ring.unit_id} needs attention</h1>
-                <div className="mt-2 flex justify-center"><StatusPill status="at_risk" label={`At risk · ${ring.rul_low} to ${ring.rul_high} days`} /></div>
+                <div className="mt-2 flex justify-center"><StatusPill status="at_risk" label={`At risk · ${Math.round(ring.rul_low)} to ${Math.round(ring.rul_high)} days`} /></div>
                 <p className="tnum m-0 mt-2.5 text-sm text-muted">Ringing · answer within {Math.max(0, left)} s</p>
               </section>
               <div className="mt-[22px] rounded-2xl p-3.5 text-[15px] shadow-card"><div className="mb-1 text-sm text-ink [font-weight:var(--w-strong)]">Why</div>{ring.reason}</div>

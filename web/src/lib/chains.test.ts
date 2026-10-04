@@ -48,4 +48,10 @@ describe('buildChains', () => {
     const c = buildChains([e(1, 'manager_alert', 'A'), e(2, 'manager_decision', 'A')])
     expect(c).toHaveLength(1); expect(c[0].outcome).toBe('decided')
   })
+  it('puts every unit-less plan change into one card instead of one card per day', () => {
+    const c = buildChains([e(1, 'status_change', 'A'), { ...e(2, 'plan_changed', ''), unit_id: null }, { ...e(3, 'plan_changed', ''), unit_id: null }, { ...e(4, 'plan_changed', ''), unit_id: null }])
+    expect(c.filter((x) => x.id === 'sys-plan')).toHaveLength(1)
+    expect(c.find((x) => x.id === 'sys-plan')!.events).toHaveLength(3)
+    expect(c).toHaveLength(2)
+  })
 })

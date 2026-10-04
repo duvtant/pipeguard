@@ -139,17 +139,18 @@ function ChainCard({ c }: { c: Chain }) {
         </div>
         <p className="m-0 mt-1 text-sm text-muted">{first.detail}</p>
         <ol className="m-0 mt-3 list-none p-0">
-          {c.events.map((e, i) => {
+          {(c.id === 'sys-plan' ? c.events.slice(-3) : c.events).map((e, i, list) => {
             const I = ICON[e.type] ?? Warn
             return (
               <li key={e.event_id} className="relative flex gap-3 pb-3 last:pb-0">
-                {i < c.events.length - 1 && <span aria-hidden className="absolute bottom-0 left-[11px] top-6 w-px bg-line" />}
+                {i < list.length - 1 && <span aria-hidden className="absolute bottom-0 left-[11px] top-6 w-px bg-line" />}
                 <span className="grid size-6 flex-none place-items-center rounded-full bg-accent-soft text-accent"><I width={13} height={13} aria-hidden /></span>
                 <div className="min-w-0"><b className="block text-sm [font-weight:var(--w-strong)] text-ink">{e.title}</b><span className="text-[13px] text-muted">{formatSimDate(e.sim_day)} · {e.detail}</span></div>
               </li>
             )
           })}
         </ol>
+        {c.id === 'sys-plan' && c.events.length > 3 && <p className="m-0 mt-2 text-[13px] text-muted">{c.events.length - 3} earlier plan updates are not shown. Export CSV has them all.</p>}
         {checks.length > 0 && <SafetyChecks checks={checks} />}
         {hasCall && c.unit_id && (
           <div className="mt-3 border-t border-line pt-3">

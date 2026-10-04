@@ -33,7 +33,13 @@ function outcomeOf(events: EventMsg[]): Chain['outcome'] {
 export function buildChains(events: EventMsg[]): Chain[] {
   const byUnit = new Map<string, Chain>()
   const chains: Chain[] = []
+  // The real backend wrote a "Plan changed" event with no unit on every simulated day. They all go into ONE card, not one card each.
+  let planUpdates: Chain | null = null
   for (const e of [...events].sort((a, b) => a.event_id - b.event_id)) {
+    if (!e.unit_id && e.type === 'plan_changed') {
+      if (!planUpdates) { planUpdates = { id: 'sys-plan', unit_id: null, events: [], lastId: 0, title: 'Plan updates', outcome: 'system' }; chains.push(planUpdates) }
+      planUpdates.events.push(e); planUpdates.lastId = Math.max(planUpdates.lastId, e.event_id); continue
+    }
     if (!e.unit_id) { chains.push({ id: `sys-${e.event_id}`, unit_id: null, events: [e], lastId: e.event_id, title: e.title, outcome: 'system' }); continue }
     let c = byUnit.get(e.unit_id)
     const finished = c?.events.some((x) => FINISHERS.has(x.type) || isFailure(x))
