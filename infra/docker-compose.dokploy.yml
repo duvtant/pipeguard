@@ -75,7 +75,7 @@ services:
     depends_on:
       # service_started, NOT service_healthy: on a brand-new server the database is empty, so the api reports "degraded" (unhealthy)
       # until the first seed. Waiting for healthy would stop the whole stack from ever starting. Seed once with
-      # POST /api/clock {"action":"reset"} (see docs/DEPLOY_DOKPLOY.md).
+      # POST /api/admin/reset with the X-Admin-Token header (see docs/DEPLOY_DOKPLOY.md).
       api:
         condition: service_started
     networks:

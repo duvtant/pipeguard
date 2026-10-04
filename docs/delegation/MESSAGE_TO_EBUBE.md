@@ -2,9 +2,15 @@
 
 **One document, kept up to date.** David sends this file; when something new comes up we add it here (and change the version line) instead of sending a new message. If you have already read an earlier version, only the items marked **NEW** or **CHANGED** below are different.
 
-**Version:** v4 · Sat Oct 3, 2026 · **Read this first:** `00_TEAM_CONTRACT.md` is still the source of truth for anything already in it. This file lists only what the dashboard uses that the contract does not cover yet.
+**Version:** v5 · Sun Oct 4, 2026 · **Read this first:** `00_TEAM_CONTRACT.md` is still the source of truth for anything already in it. This file lists only what the dashboard uses that the contract does not cover yet.
 
-## READ THIS FIRST (v4): how we work together from now on
+## READ THIS FIRST (v5): David changed three things in YOUR files on `dev`, merge `dev` into your branch before you push
+These were found by running the real stack and are tested (backend 229 passed on Postgres, engine 55 passed). Please read the diffs, do not revert them:
+1. **`engine/pg_store.py` `replan` (about 15 lines):** an overdue booking is now the same booking rolled forward to today. Before, past rows were never deleted and the same unit looked "new" every simulated day (a "Plan changed" event and an extra `plan_items` row per day). Regression tests are in `tests/test_engine_store.py`.
+2. **`api/routers/clock.py`:** `reset` and `advance` now need `X-Admin-Token` (play, pause and speed stay open). Test in `tests/test_reads.py`.
+3. **`GET/PUT /api/settings` is built** (your item 5): `core/app_settings.py`, `api/routers/settings.py`, a new `app_settings` table (added to an existing database by `core/migrate.py`). The engine, alerts and voice re-plan read it. Tests in `tests/test_settings.py`.
+
+## (v4) how we work together from now on
 **Branches.** Keep working **on your own branch** (`ebube/backend`) and keep pushing to it exactly as you do now. **Do not work on `dev` and do not push to `main`.** David is the only person who merges into `dev`, so nothing breaks while people are building.
 - David is creating a `dev` branch that holds the dashboard, the voice agent setup and the updated contract and docs. **Once it is pushed, merge it into your branch one time** (`git fetch origin` then `git merge origin/dev`) so you build against the current contract (it adds the new event types and the optional items below). After that, carry on as before.
 - When you push something that works, **message David**, and he merges your branch into `dev` and tests it with the dashboard. Your files and the dashboard's files do not overlap, so merges should be clean.

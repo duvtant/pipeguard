@@ -155,6 +155,12 @@ Endpoints are listed in `techstack.md` section 11. The JSON shapes below are the
 
 **Plan item** (`GET /api/plan`): `{id, unit_id, station_code, planned_day, planned_date, technician_id, technician_name, expected_saving, reason, state, approval}`. `POST /api/plan/{id}/approve` (idempotent, returns the item) and `POST /api/plan/approve-all` (returns `{approved: n}`) set `approval` to `approved`; `submit_availability` sets it to `proposed` only when the day actually changes. Each approval writes one `plan_approved` event. For `state = needs_manager_decision` items, `POST /api/plan/{id}/decide` with `{choice: overtime|defer}` (422/404/409 on bad input; idempotent) sets the optional `decision` field (`overtime` books it tomorrow, approved; `deferred` accepts the risk, stays off the schedule and CSV), clears the unit's `needs_manager_decision` flag, and writes one `manager_decision` event. Work-orders CSV contains approved items only.
 
+**Settings** (`GET /api/settings`, `PUT /api/settings`, no admin token): `{crews_per_station: 0..5, cost_breakdown, cost_service, ring_timeout_secs: 5..120, call_backup_when_missed, require_manager_for_conflicts}`. One shared database row (`app_settings`) that the API, the engine, the alert code and the voice re-plan all read; PUT merges the fields it is given and returns all six; a demo reset puts the defaults back. `require_manager_for_conflicts` is stored but not enforced (a unit no crew can take always needs a manager).
+
+**Clock** (`GET /api/clock`, `POST /api/clock {action: play|pause|speed|advance|reset}`): `play`, `pause` and `speed` are open (the manager's replay controls). **`reset` and `advance` need the `X-Admin-Token` header**, the same rule as `/api/admin/*`.
+
+**Plan rows:** one open row per unit. A booking whose day has passed without a service is the same booking rolled forward to today: it is not re-added and writes no `plan_changed` event.
+
 **Event / SSE message** (`GET /api/stream`, `GET /api/events`)
 ```json
 {"event_id": 812, "type": "plan_changed", "sim_day": 31, "unit_id": "EDS-07",

@@ -33,9 +33,9 @@ Add one domain: **Host** `pipeguard.blunelabs.com`, **Service Name** `web`, **Co
 1. Click **Deploy** and watch the build log (first build takes a few minutes).
 2. The database starts empty, so the API reports "degraded" until it is seeded. **Seed it once from your Mac:**
 ```
-curl -X POST https://pipeguard.blunelabs.com/api/clock -H 'Content-Type: application/json' -d '{"action":"reset"}'
+curl -X POST https://pipeguard.blunelabs.com/api/admin/reset -H "X-Admin-Token: <the ADMIN_TOKEN you set in Dokploy>"
 ```
-(Or press **Reset replay** on the Fleet page.) This loads the 100 turbines, the technicians, and pauses the clock at day 0.
+(Reset needs the admin token. You can also unlock **Test mode** once in the browser and press **Reset replay** on the Fleet page.) This loads the 100 turbines, the technicians, and pauses the clock at day 0.
 
 ## 6. Check it
 ```
