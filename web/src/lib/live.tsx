@@ -47,7 +47,10 @@ export function LiveProvider({ children }: { children: ReactNode }) {
       onEvent: (ev) => {
         patchEvents(qc, ev)
         // The signature moment (DESIGN.md 9.3): a plan change is announced, and a manager decision is flagged.
-        if (ev.type === 'plan_changed') showToast.current({ title: 'Plan changed', detail: ev.detail, tone: 'info' })
+        // The technician's phone page (/field/...) is not the manager's screen: a manager toast there covered the Answer and Decline buttons
+        // (found on the deployed server). The events still update the caches; they just do not pop up.
+        const quiet = window.location.pathname.startsWith('/field/')
+        if (quiet) { /* no toast */ } else if (ev.type === 'plan_changed') showToast.current({ title: 'Plan changed', detail: ev.detail, tone: 'info' })
         else if (ev.type === 'plan_approved') showToast.current({ title: 'Plan approved', detail: ev.detail, tone: 'calm' })
         else if (ev.type === 'manager_decision') showToast.current({ title: ev.title, detail: ev.detail, tone: 'calm' })
         else if (ev.type === 'manager_alert' && ev.severity === 'critical') showToast.current({ title: ev.title, detail: ev.detail, tone: 'attention' })
