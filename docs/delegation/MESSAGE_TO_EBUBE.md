@@ -1,10 +1,10 @@
 # Message to Ebube: everything the dashboard needs from the backend
 
 ## v6 (Sun Oct 4): we are done, nothing is required from you
-Code is finished and deployed from `dev`. Everything asked for in the numbered list below is built and tested (approvals, manager decisions, call record, settings, read endpoints). Please **do not push anything new** to your branch. If you must, merge `origin/dev` first.
+Code is finished and deployed from `dev`. Everything asked for in the numbered list below is built and tested (approvals, manager decisions, call record, settings, read endpoints), except the optional cost `series` on `/api/simulate` (the dashboard shows bars instead, so nothing breaks). Please **do not push anything new** to your branch. If you must, merge `origin/dev` first.
 David changed three things in your files: the plan-rows fix in `engine/pg_store.py`, `reset` and `advance` on the clock needing the admin token, and the settings API (`core/app_settings.py`, `api/routers/settings.py`). Do not revert them.
 Optional, 5 minutes: the staged call line reads "Not before in 1 days" in `core/demo_call.py`; it should say a weekday ("Not before Friday").
-**The rest of this file is history. Every item below is done.**
+**The rest of this file is history. Nothing below needs doing.**
 
 ---
 **One document, kept up to date.** David sends this file; when something new comes up we add it here (and change the version line) instead of sending a new message. If you have already read an earlier version, only the items marked **NEW** or **CHANGED** below are different.
