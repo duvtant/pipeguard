@@ -3,8 +3,17 @@ import { api } from './api'
 import { useFallbackInterval } from './live'
 import type { Fault, Settings, Technician, EventMsg, FeedbackStats, FleetResponse, ModelMetrics, PlanItem, SimulateRequest, SimulateResponse, TrendPoint, UnitDetail } from './types'
 
+// The real engine sends remaining life as decimals (99.138705...). The screens show whole days, so round once, here, for every consumer.
+const roundRul = <T extends { rul: { low: number; likely: number; high: number } }>(u: T): T => ({ ...u, rul: { low: Math.round(u.rul.low), likely: Math.round(u.rul.likely), high: Math.round(u.rul.high) } })
+const roundFleet = (f: FleetResponse): FleetResponse => ({ ...f, units: f.units.map(roundRul) })
+const roundUnit = (u: UnitDetail): UnitDetail => roundRul(u)
+
+// The contract is one plan row per unit. The real backend (Oct 4) kept adding a row for the same unit every simulated day and never removed
+// the old ones, so keep only each unit's newest row (highest id) until that is fixed at the source. Harmless when each unit has one row.
+export const newestPerUnit = (items: PlanItem[]): PlanItem[] => { const best = new Map<string, PlanItem>(); for (const p of items) { const cur = best.get(p.unit_id); if (!cur || p.id > cur.id) best.set(p.unit_id, p) } return [...best.values()].sort((a, b) => items.indexOf(a) - items.indexOf(b)) }
+
 // Data hooks. Phase 3 (P3.1) patches the fleet cache from one shared event stream; until then this polls.
-export const useFleet = () => useQuery({ queryKey: ['fleet'], queryFn: () => api<FleetResponse>('/fleet'), refetchInterval: useFallbackInterval() })
+export const useFleet = () => useQuery({ queryKey: ['fleet'], queryFn: () => api<FleetResponse>('/fleet').then(roundFleet), refetchInterval: useFallbackInterval() })
 export const useTrend = () => useQuery({ queryKey: ['fleet', 'trend'], queryFn: () => api<TrendPoint[]>('/fleet/trend') })
 // retry: false so a backend that has not built this endpoint hides the card at once instead of after three tries.
 export const useFeedbackStats = () => useQuery({ queryKey: ['feedback-stats'], queryFn: () => api<FeedbackStats>('/feedback/stats'), retry: false })
@@ -18,11 +27,11 @@ export const useSimulate = (req: SimulateRequest) =>
     placeholderData: keepPreviousData,
   })
 
-export const usePlan = () => useQuery({ queryKey: ['plan'], queryFn: () => api<PlanItem[]>('/plan'), refetchInterval: useFallbackInterval() })
+export const usePlan = () => useQuery({ queryKey: ['plan'], queryFn: () => api<PlanItem[]>('/plan').then(newestPerUnit), refetchInterval: useFallbackInterval() })
 export const useEvents = () => useQuery({ queryKey: ['events'], queryFn: () => api<EventMsg[]>('/events'), refetchInterval: useFallbackInterval(), staleTime: Infinity })
 
 export const useUnit = (id: string | null) =>
-  useQuery({ queryKey: ['unit', id], queryFn: () => api<UnitDetail>(`/units/${id}`), enabled: !!id, refetchInterval: useFallbackInterval() })
+  useQuery({ queryKey: ['unit', id], queryFn: () => api<UnitDetail>(`/units/${id}`).then(roundUnit), enabled: !!id, refetchInterval: useFallbackInterval() })
 
 export const useTechnicians = () => useQuery({ queryKey: ['technicians'], queryFn: () => api<Technician[]>('/technicians') })
 export const useSettings = () => useQuery({ queryKey: ['settings'], queryFn: () => api<Settings>('/settings'), staleTime: Infinity })

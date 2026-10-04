@@ -31,7 +31,7 @@ function ToastCard({ t, onDone }: { t: ToastItem; onDone: (id: number) => void }
       transition={{ duration: dur.base, ease: ease.out }} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
       className="pointer-events-auto flex w-[340px] max-w-[calc(100vw-32px)] items-start gap-3 rounded-[14px] bg-canvas px-4 py-3 shadow-[0_0_0_1px_var(--color-line),0_14px_30px_-12px_rgba(8,9,17,0.28)]">
       <span className={`mt-0.5 grid size-7 flex-none place-items-center rounded-full ${cls}`}><Icon width={15} height={15} aria-hidden /></span>
-      <div className="min-w-0 text-sm"><b className="block [font-weight:var(--w-strong)] text-ink">{t.title}</b>{t.detail && <span className="text-[13px] text-muted">{t.detail}</span>}</div>
+      <div className="min-w-0 text-sm"><b className="block [font-weight:var(--w-strong)] text-ink">{t.title}</b>{t.detail && <span className="line-clamp-2 text-[13px] text-muted">{t.detail}</span>}</div>
     </motion.li>
   )
 }
@@ -40,7 +40,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([])
   const next = useRef(1)
   const done = useCallback((id: number) => setItems((l) => l.filter((x) => x.id !== id)), [])
-  const show = useCallback((t: Omit<ToastItem, 'id'>) => setItems((l) => [...l.slice(-2), { ...t, id: next.current++ }]), []) // at most 3 at once
+  const show = useCallback((t: Omit<ToastItem, 'id'>) => setItems((l) => [...l.filter((x, i) => !(i === l.length - 1 && x.title === t.title)).slice(-2), { ...t, id: next.current++ }]), []) // at most 3 at once; a repeat of the same title replaces the last one, so a fast clock cannot stack a wall of identical toasts
   const value = useMemo(() => ({ show }), [show])
   return (
     <ToastContext.Provider value={value}>
