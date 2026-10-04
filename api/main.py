@@ -516,5 +516,6 @@ if settings.mock_api:
 
 else:
     # Real mode. Routers are added here as they are built.
-    from api.routers import field
+    from api.routers import field, voice
     app.include_router(field.router)
+    app.include_router(voice.router)

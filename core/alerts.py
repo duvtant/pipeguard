@@ -62,11 +62,21 @@ def _calls_today(s: Session, tech_id: int, day: int) -> int:
                      {"t": tech_id, "d": day}).scalar_one()
 
 
+def _is_ringing(s: Session, tech_id: int) -> bool:
+    return s.execute(text("SELECT 1 FROM call_requests WHERE technician_id = :t AND state = 'ringing' LIMIT 1"),
+                     {"t": tech_id}).first() is not None
+
+
 def _pick_technician(s: Session, unit_id: str, day: int):
-    for t in station_techs(s, unit_id):
-        if _calls_today(s, t["id"], day) < settings.max_calls_per_tech_per_day:
-            return t
-    return None
+    """(technician or None, reason if None). One ring at a time per technician; the unit retries next tick."""
+    under_cap = [t for t in station_techs(s, unit_id)
+                 if _calls_today(s, t["id"], day) < settings.max_calls_per_tech_per_day]
+    for t in under_cap:
+        if not _is_ringing(s, t["id"]):
+            return t, None
+    if under_cap:
+        return None, "every available technician at the station already has a call ringing, will retry"
+    return None, "daily call cap reached for every technician at the station"
 
 
 def _backup_for(s: Session, unit_id: str, missed_tech_id: int):
@@ -116,9 +126,9 @@ def create_call_requests(s: Session, sim_day: int | None = None, top_n: int = TO
                      {"u": uid}).first():
             continue  # someone else just created it
         why = _dup_reason(s, uid, day, p_now)
-        tech = None if why else _pick_technician(s, uid, day)
-        if not why and tech is None:
-            why = "daily call cap reached for every technician at the station"
+        tech = None
+        if not why:
+            tech, why = _pick_technician(s, uid, day)
         if why:
             log.info("call suppressed for %s: %s", uid, why)
             out["suppressed"].append((uid, why))
@@ -213,10 +223,10 @@ def technician_by_slug(s: Session, slug: str):
 
 
 def ringing_request(s: Session, tech_id: int, live_only: bool = True) -> int | None:
-    """The call currently ringing for this technician. live_only skips rings past their expiry."""
+    """The oldest call ringing for this technician (the one the phone shows first). live_only skips expired rings."""
     extra = " AND ring_expires_at > now()" if live_only else ""
     return s.execute(text("SELECT id FROM call_requests WHERE technician_id = :t AND state = 'ringing'"
-                          + extra + " ORDER BY id DESC LIMIT 1"), {"t": tech_id}).scalar()
+                          + extra + " ORDER BY id LIMIT 1"), {"t": tech_id}).scalar()
 
 
 def ring_payload(s: Session, cid: int) -> dict | None:

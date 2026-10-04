@@ -161,3 +161,25 @@ def test_two_sweepers_do_not_double_fire(db):
     [t.join() for t in threads]
     assert sum(results) == 1
     assert len(states(db)) == 2  # original plus exactly one backup ring
+
+
+def test_a_technician_never_has_two_rings_at_once(db):
+    for i in (1, 2, 3, 4):
+        predict(db, f"EDS-0{i}", 0.95 - i / 100)
+    res = alerts.create_call_requests(db, top_n=4)
+    db.commit()
+    assert [s[2] for s in states(db)] == [1, 2, 3]  # Anna, Marc, then Bo; nobody rings twice
+    assert len(res["created"]) == 3 and "already has a call ringing" in res["suppressed"][0][1]
+    # Anna's ring ends, so the fourth unit gets its call on the next evaluation
+    alerts.miss_call(db, states(db)[0][0])
+    db.commit()
+    res = alerts.create_call_requests(db, top_n=4)
+    assert len(res["created"]) == 1
+
+
+def test_answer_and_decline_act_on_the_oldest_ring(db):
+    db.execute(text("INSERT INTO call_requests (unit_id, technician_id, sim_day, state, attempt, ring_expires_at) "
+                    "VALUES ('EDS-01', 1, 10, 'ringing', 1, now() + interval '30 seconds'), "
+                    "('EDS-02', 1, 10, 'ringing', 1, now() + interval '30 seconds')"))
+    db.commit()
+    assert alerts.ringing_request(db, 1) == 1
