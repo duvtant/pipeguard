@@ -26,6 +26,10 @@ from core.db import engine, init_db  # noqa: E402
 
 init_db()
 
+from core.migrate import ensure_columns  # noqa: E402
+
+ensure_columns()  # test database may predate the newest columns
+
 ALL = ("stations, units, technicians, sim_state, readings, quality_flags, predictions, engine_params, "
        "plan_items, constraints, call_requests, calls, feedback, faults, events")
 

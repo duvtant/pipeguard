@@ -205,15 +205,26 @@ def sweep_once() -> int:
 
 
 async def sweeper_loop(interval: float = 1.0) -> None:
-    """Background task started by the API. A failed tick is logged and retried, never fatal."""
-    while True:
-        try:
-            await asyncio.to_thread(sweep_once)
-        except asyncio.CancelledError:
-            raise
-        except Exception:
-            log.exception("sweeper tick failed")
-        await asyncio.sleep(interval)
+    """Background task started by the API: expires rings every second and, in a child task, pulls call
+    transcripts the webhook never delivered. A failed tick is logged and retried, never fatal."""
+    from core.call_records import pull_loop  # imported here: call_records imports this module
+    from core.migrate import ensure_columns
+    try:
+        await asyncio.to_thread(ensure_columns)  # databases created before a model change get the new columns
+    except Exception:
+        log.exception("ensure_columns failed")
+    pull = asyncio.create_task(pull_loop())
+    try:
+        while True:
+            try:
+                await asyncio.to_thread(sweep_once)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                log.exception("sweeper tick failed")
+            await asyncio.sleep(interval)
+    finally:
+        pull.cancel()
 
 
 # ---------------------------------------------------------------- phone page helpers
@@ -260,4 +271,6 @@ def link_conversation(s: Session, tech_id: int, conversation_id: str, ended: boo
                    "call_request_id = COALESCE(calls.call_request_id, EXCLUDED.call_request_id)"),
               {"c": cr.id, "v": conversation_id, "l": cr.language})
     if ended:
+        s.execute(text("UPDATE calls SET ended_at = COALESCE(ended_at, now()) WHERE conversation_id = :v"),
+                  {"v": conversation_id})  # starts the 60 s webhook timer (core/call_records.pull_pending)
         finish_call(s, cr.id)

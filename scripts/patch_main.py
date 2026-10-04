@@ -54,6 +54,15 @@ if "voice.router" not in src:
                            "    app.include_router(voice.router)\n")
     done.append("voice router")
 
+if "webhooks.router" not in src:
+    old = "    from api.routers import field, voice\n"
+    if old not in src or "    app.include_router(voice.router)\n" not in src:
+        raise SystemExit("could not find the voice router lines in api/main.py")
+    src = src.replace(old, "    from api.routers import field, voice, webhooks\n")
+    src = src.replace("    app.include_router(voice.router)\n",
+                      "    app.include_router(voice.router)\n    app.include_router(webhooks.router)\n")
+    done.append("webhooks router")
+
 if done:
     path.write_text(src, encoding="utf-8")
     print("patched api/main.py:", ", ".join(done))

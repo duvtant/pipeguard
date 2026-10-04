@@ -186,6 +186,10 @@ class Call(SQLModel, table=True):
     data_collection: Optional[dict] = Field(default=None, sa_column=Column(JSONB))
     duration_secs: Optional[int] = None
     received_via: Optional[str] = None  # webhook | pull | webhook_fallback
+    # ElevenLabs report card, [{criteria_id, result, rationale}]. Null when the call has none.
+    evaluation: Optional[list] = Field(default=None, sa_column=Column(JSONB))
+    # Set when the phone page reports hang-up. The sweeper pulls the transcript if no webhook arrives.
+    ended_at: Optional[datetime] = Field(default=None, sa_column=Column(DateTime(timezone=True)))
 
 
 class Feedback(SQLModel, table=True):
