@@ -63,6 +63,22 @@ if "webhooks.router" not in src:
                       "    app.include_router(voice.router)\n    app.include_router(webhooks.router)\n")
     done.append("webhooks router")
 
+if "app.include_router(fleet.router)" not in src:
+    old = "    from api.routers import field, voice, webhooks\n"
+    inc = "    app.include_router(webhooks.router)\n"
+    if old not in src or inc not in src:
+        raise SystemExit("could not find the webhooks router lines in api/main.py")
+    src = src.replace(old, "    from api.routers import clock, events, field, fleet, health, plan, voice, webhooks\n")
+    src = src.replace(inc, inc + (
+        "    # The real health check replaces the mock one defined near the top of this file.\n"
+        "    app.router.routes[:] = [r for r in app.router.routes if getattr(r, 'path', None) != '/api/health']\n"
+        "    app.include_router(health.router)\n"
+        "    app.include_router(fleet.router)\n"
+        "    app.include_router(plan.router)\n"
+        "    app.include_router(events.router)\n"
+        "    app.include_router(clock.router)\n"))
+    done.append("read routers, real health")
+
 if done:
     path.write_text(src, encoding="utf-8")
     print("patched api/main.py:", ", ".join(done))
