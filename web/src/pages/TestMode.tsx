@@ -14,7 +14,6 @@ import { Segmented } from '@/components/ui/Segmented'
 import { Chip } from '@/components/ui/Chip'
 import { useToast } from '@/components/ui/Toast'
 import { adminApi, useFaults, useFleet, useTechnicians, getAdminToken, setAdminToken } from '@/lib/queries'
-import { api } from '@/lib/api'
 import { SENSOR_LABELS } from '@/lib/sensors'
 import { formatSimDate } from '@/lib/simCalendar'
 import type { Fault, FaultType } from '@/lib/types'
@@ -67,7 +66,7 @@ function Console({ onLock }: { onLock: () => void }) {
     onError: rejected,
   })
   const endFault = useMutation({ mutationFn: (id: number) => adminApi(`/testmode/faults/${id}`, { method: 'DELETE' }), onSuccess: refresh, onError: rejected })
-  const clock = useMutation({ mutationFn: (b: { action: 'play' | 'pause' | 'speed' | 'advance'; speed_seconds_per_day?: number; days?: number }) => api('/clock', { method: 'POST', body: JSON.stringify(b) }), onSuccess: refresh })
+  const clock = useMutation({ mutationFn: (b: { action: 'play' | 'pause' | 'speed' | 'advance'; speed_seconds_per_day?: number; days?: number }) => adminApi('/clock', { method: 'POST', body: JSON.stringify(b) }), onSuccess: refresh })
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">

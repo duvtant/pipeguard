@@ -31,7 +31,8 @@ import { STATUS, STATUS_ORDER, StatusPill } from '@/components/ui/status'
 import { useChangedUnits } from '@/hooks/useChangedUnits'
 import CloudSlash from '~icons/ph/cloud-slash'
 import Rewind from '~icons/ph/arrow-counter-clockwise'
-import { useEvents, useFleet, usePlan, useTrend } from '@/lib/queries'
+import { adminApi, useEvents, useFleet, usePlan, useTrend } from '@/lib/queries'
+import { useToast } from '@/components/ui/Toast'
 import { api } from '@/lib/api'
 import { callStats, needingAttention, planStats, stationSummary, tileStatus } from '@/lib/fleetStats'
 import { formatSimDate } from '@/lib/simCalendar'
@@ -59,9 +60,11 @@ function FleetPage({ fleet }: { fleet: ReturnType<typeof useFleet> }) {
   const plan = usePlan()
   const events = useEvents()
   const qc = useQueryClient()
+  const toast = useToast()
   const running = fleet.data?.clock.status === 'running'
   const clock = useMutation({
-    mutationFn: (body: { action: 'play' | 'pause' | 'speed' | 'reset'; speed_seconds_per_day?: number }) => api('/clock', { method: 'POST', body: JSON.stringify(body) }),
+    // Reset wipes the demo, so the server wants the admin token for it (the token Test mode keeps in this tab). Play, pause and speed need none.
+    mutationFn: (body: { action: 'play' | 'pause' | 'speed' | 'reset'; speed_seconds_per_day?: number }) => (body.action === 'reset' ? adminApi : api)('/clock', { method: 'POST', body: JSON.stringify(body) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['fleet'] }),
   })
 
@@ -119,7 +122,8 @@ function FleetPage({ fleet }: { fleet: ReturnType<typeof useFleet> }) {
           options={[{ value: '2', label: 'Slow: 2 seconds per day', icon: <span className="text-[13px] [font-weight:var(--w-strong)]">1×</span> },
             { value: '1', label: 'Normal: 1 second per day', icon: <span className="text-[13px] [font-weight:var(--w-strong)]">2×</span> },
             { value: '0.25', label: 'Fast: a quarter second per day', icon: <span className="text-[13px] [font-weight:var(--w-strong)]">8×</span> }]} />
-        <ActionButton icon={<Rewind width={16} height={16} />} onAction={() => clock.mutateAsync({ action: 'reset' })} successLabel="Reset">Reset replay</ActionButton>
+        <ActionButton icon={<Rewind width={16} height={16} />} onAction={() => clock.mutateAsync({ action: 'reset' })} successLabel="Reset"
+          onError={(e) => toast.show({ title: 'Reset needs the admin token', detail: /401/.test(String(e)) ? 'Open Test mode and unlock it once, then reset from here or there.' : 'The reset could not run. Try again.', tone: 'attention' })}>Reset replay</ActionButton>
         <ChipLink to="/test" icon={<PhoneCall width={16} height={16} />}>Simulate call</ChipLink>
         <ChipLink to="/plan" icon={<CalendarCheck width={16} height={16} />}>Open weekly plan</ChipLink>
         <ChipLink to="/orders" icon={<Download width={16} height={16} />}>Work orders</ChipLink>

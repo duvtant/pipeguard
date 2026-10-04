@@ -52,7 +52,7 @@ export default function Settings() {
               {!draft ? <Skeleton className="h-[220px]" /> : (<>
                 <Slider className="mt-3" label="How long a phone rings" value={draft.ring_timeout_secs} min={10} max={60} step={5} onValueChange={(v) => set('ring_timeout_secs', v)} detents={[{ value: 30, label: 'default' }]} format={(v) => `${v} seconds`} />
                 <div className="mt-3"><Toggle label="Call the backup technician if nobody answers" hint="Then alert a manager if the backup misses it too." checked={draft.call_backup_when_missed} onChange={(v) => set('call_backup_when_missed', v)} /></div>
-                <Toggle label="Ask a manager when no crew slot is free" hint="Otherwise the unit stays unscheduled and quietly waits." checked={draft.require_manager_for_conflicts} onChange={(v) => set('require_manager_for_conflicts', v)} /></>)}
+                <Toggle label="Ask a manager when no crew slot is free" hint="Always on in this version: a unit that no crew can take always needs a manager's decision." checked disabled onChange={() => undefined} /></>)}
             </Card>
           </motion.div>
           <motion.div {...pageItem(2)}>
