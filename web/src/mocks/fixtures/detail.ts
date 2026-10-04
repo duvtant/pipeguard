@@ -1,10 +1,9 @@
-import type { FleetUnit, HistoryPoint, QualityFlag, SensorSeries, UnitDetail } from '@/lib/types'
+import type { CallRecord, EventMsg, FleetUnit, HistoryPoint, QualityFlag, SensorSeries, UnitDetail } from '@/lib/types'
 import { SENSOR_LABELS } from '@/lib/sensors'
 import { MOCK_SIM_DAY } from './fleet'
-import { CALLS, EVENTS } from './events'
 
 // Deterministic per-unit detail (no randomness: derived from the unit's own numbers).
-export function makeDetail(u: FleetUnit): UnitDetail {
+export function makeDetail(u: FleetUnit, events: EventMsg[], calls: CallRecord[]): UnitDetail {
   const days = Array.from({ length: 30 }, (_, i) => MOCK_SIM_DAY - 29 + i)
   const history: HistoryPoint[] = days.map((d, i) => {
     const t = i / 29 // 0 = a month ago, 1 = now
@@ -24,7 +23,7 @@ export function makeDetail(u: FleetUnit): UnitDetail {
     : []
   return {
     ...u, history, sensors, quality_flags,
-    events: EVENTS.filter((e) => e.unit_id === u.unit_id),
-    calls: CALLS.filter((c) => c.unit_id === u.unit_id),
+    events: events.filter((e) => e.unit_id === u.unit_id),
+    calls: calls.filter((c) => c.unit_id === u.unit_id),
   }
 }

@@ -1,4 +1,7 @@
-import type { PolicyResult, SimulateRequest, SimulateResponse } from '@/lib/types'
+import type { CostPoint, PolicyResult, SimulateRequest, SimulateResponse } from '@/lib/types'
+
+// Cumulative cost curves that end at each policy's total. Shape only: failures cost a lot, so run-to-failure curves up late.
+const curve = (total: number, power: number) => (d: number, days: number) => Math.round(total * Math.pow(d / days, power))
 
 // A plausible, deterministic stand-in for POST /api/simulate. It is NOT the real model:
 // numbers only need to move sensibly with the sliders (more crews -> fewer breakdowns).
@@ -25,5 +28,13 @@ export function simulate(req: SimulateRequest): SimulateResponse {
     headline: { detected: caught + 3, actioned: caught, total: 100, lead_days: 14,
       text: `PipeGuard would have caught ${caught} of 100 failures at least 14 days early.` },
     computed_ms: 120,
+    series: (() => {
+      const days = 120
+      const f = [curve(policies[0].total_cost, 1.9), curve(policies[1].total_cost, 1.25), curve(policies[2].total_cost, 1.1)]
+      return Array.from({ length: 13 }, (_, i): CostPoint => {
+        const d = (i * days) / 12
+        return { sim_day: Math.round(d), run_to_failure: f[0](d, days), fixed_schedule: f[1](d, days), pipeguard: f[2](d, days) }
+      })
+    })(),
   }
 }

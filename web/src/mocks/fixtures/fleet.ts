@@ -34,7 +34,7 @@ const unitId = (code: string, n: number) => `${code}-${String(n).padStart(2, '0'
 
 function build(code: string, name: string, n: number, rand: () => number): FleetUnit {
   const r = rand()
-  const risk: RiskStatus = r < 0.7 ? 'healthy' : r < 0.9 ? 'watch' : 'at_risk'
+  const risk: RiskStatus = r < 0.82 ? 'healthy' : r < 0.95 ? 'watch' : 'at_risk'
   const sensors = [...RISING, ...FALLING]
   const s1 = sensors[Math.floor(rand() * sensors.length)]
   const s2 = sensors[Math.floor(rand() * sensors.length)]
