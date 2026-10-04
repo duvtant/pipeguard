@@ -19,7 +19,24 @@ from pydantic import BaseModel
 from core.config import get_settings
 
 settings = get_settings()
-app = FastAPI(title="PipeGuard API")
+from contextlib import asynccontextmanager, suppress
+
+
+@asynccontextmanager
+async def lifespan(_app):
+    # Real mode only: the one-second sweeper expires unanswered rings (core/alerts.py).
+    task = None
+    if not settings.mock_api:
+        from core.alerts import sweeper_loop
+        task = asyncio.create_task(sweeper_loop())
+    yield
+    if task:
+        task.cancel()
+        with suppress(asyncio.CancelledError):
+            await task
+
+
+app = FastAPI(title="PipeGuard API", lifespan=lifespan)
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
@@ -495,3 +512,9 @@ if settings.mock_api:
         add_event("call_summary", uid, "Call summary", summary,
                   payload={"call_id": rec_id, "call_request_id": cr["call_request_id"]})
         return {"ok": True, "plan_changed": {"unit_id": uid, "old_day": old, "new_day": day}}
+
+
+else:
+    # Real mode. Routers are added here as they are built.
+    from api.routers import field
+    app.include_router(field.router)
