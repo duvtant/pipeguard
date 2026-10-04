@@ -5,6 +5,7 @@ Fresh databases get these columns from create_all; existing ones get them here. 
 from sqlalchemy import text
 
 from core.db import engine
+from core.models import AppSettings
 
 ADD_COLUMNS = (
     ("calls", "evaluation", "jsonb"),        # ElevenLabs report card: [{criteria_id, result, rationale}]
@@ -21,6 +22,7 @@ SET_DEFAULTS = (
 
 def ensure_columns() -> None:
     with engine.begin() as conn:
+        AppSettings.__table__.create(conn, checkfirst=True)  # a table added after the database was first seeded
         for table, column, sql_type in ADD_COLUMNS:
             if conn.execute(text("SELECT to_regclass(:t)"), {"t": table}).scalar():
                 conn.execute(text(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {column} {sql_type}"))

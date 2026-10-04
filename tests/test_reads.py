@@ -315,3 +315,16 @@ def test_trend_feedback_stats_and_model(world):
     assert client.get("/api/feedback/stats").json() == {"total": 3, "confirmed": 2}
     m = client.get("/api/model").json()
     assert m == {"rmse": 14.3, "baseline_rmse": 34.9, "model_version": "v1"}
+
+
+def test_reset_and_advance_need_the_admin_token_but_play_pause_and_speed_stay_open(db, monkeypatch):
+    from api import deps
+    monkeypatch.setattr(deps.settings, "admin_token", "s3cret")
+    monkeypatch.setattr(clock, "reset_demo", lambda: {"units": 100})
+    for body in ({"action": "reset"}, {"action": "advance", "days": 3}):
+        assert client.post("/api/clock", json=body).status_code == 401                                        # no token
+        assert client.post("/api/clock", json=body, headers={"X-Admin-Token": "wrong"}).status_code == 401   # wrong token
+        assert client.post("/api/clock", json=body, headers={"X-Admin-Token": "s3cret"}).status_code == 200  # right token
+    for body in ({"action": "play"}, {"action": "pause"}, {"action": "speed", "speed_seconds_per_day": 2}):
+        assert client.post("/api/clock", json=body).status_code == 200                                        # manager controls stay open
+    assert client.post("/api/clock", json={"action": "teleport"}).status_code == 422                         # bad input is still a 422, not a 401

@@ -14,7 +14,7 @@ from sqlalchemy import text
 from sqlmodel import Session
 
 from core.config import get_settings
-from core import approvals
+from core import app_settings, approvals
 from core.contracts import display_status
 from core.simcal import day_date, weekday
 
@@ -238,6 +238,7 @@ def plan_items(s: Session) -> list[dict]:
     could take, and overtime items. Items are sorted by day."""
     day = int(sim_state(s)["sim_day"])
     props, dec = approvals.proposed(s), approvals.decisions(s)
+    app = app_settings.read(s)  # the manager's cost settings
     items = []
     for r in _rows(s, _PLAN_SQL, since=day - 7):
         d = dec.get(r["unit_id"])
@@ -256,7 +257,7 @@ def plan_items(s: Session) -> list[dict]:
                            "proposed" if proposal else "approved"))
     for r in _rows(s, _NO_SLOT_SQL, day=day):
         d = dec.get(r["unit_id"])
-        saving = float(r["p_fail_h"]) * settings.cost_breakdown - settings.cost_service
+        saving = float(r["p_fail_h"]) * app["cost_breakdown"] - app["cost_service"]
         why = "No crew slot is free this week."
         if d and d["choice"] == "overtime":
             if (d["day"] or -1) >= day:

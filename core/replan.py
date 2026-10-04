@@ -13,6 +13,7 @@ import os
 
 from sqlmodel import Session
 
+from core import app_settings
 from core.config import get_settings
 
 settings = get_settings()
@@ -43,7 +44,8 @@ def replan(s: Session, reason: str | None = None, emit: bool = True, source: str
             "WHERE sim_day <= %s ORDER BY unit_id, sim_day DESC", (sim_day,)).fetchall()]
         failed = {u.unit_id for u in st.get_units() if u.failed}
         units = plan_units_from_rows(rows, failed, urgency_multipliers(st.get_verdicts(), sim_day))
-        params = PlanParams(cost_breakdown=settings.cost_breakdown, cost_service=settings.cost_service)
+        app = app_settings.read_conn(st.conn)  # NOT the caller's session: it was committed above and may sit inside a transaction block
+        params = PlanParams(cost_breakdown=app["cost_breakdown"], cost_service=app["cost_service"])
         result = st.replan(lambda previous: build_plan(units, st.get_capacity(), st.get_constraints(sim_day),
                                                         params, sim_day, previous, horizon_days=horizon), sim_day)
         if emit and result.changed:

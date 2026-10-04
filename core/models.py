@@ -131,6 +131,19 @@ class EngineParams(SQLModel, table=True):
     updated_at: Optional[datetime] = Field(default=None, sa_column=_ts(onupdate=True))
 
 
+class AppSettings(SQLModel, table=True):
+    """The manager's runtime settings (core/app_settings.py). One shared row so the API, engine and simulator agree."""
+    __tablename__ = "app_settings"
+    id: int = Field(default=1, primary_key=True)  # single row
+    crews_per_station: int = 2
+    cost_breakdown: float = 200_000
+    cost_service: float = 20_000
+    ring_timeout_secs: int = 30
+    call_backup_when_missed: bool = True
+    require_manager_for_conflicts: bool = True
+    updated_at: Optional[datetime] = Field(default=None, sa_column=_ts(onupdate=True))
+
+
 class PlanItem(SQLModel, table=True):
     __tablename__ = "plan_items"
     id: Optional[int] = Field(default=None, primary_key=True)

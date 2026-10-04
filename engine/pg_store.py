@@ -21,6 +21,7 @@ import pandas as pd
 import psycopg
 from psycopg.rows import dict_row
 
+from core.app_settings import read_conn as read_settings
 from core.contracts import STATIONS, Capacity, Constraint, EventDraft, PlanItem, PlanResult, QualityFlag, VerdictRecord, station_of
 from core.sensors import SENSORS
 from engine.pipeline import UnitInfo
@@ -57,7 +58,12 @@ class PgStore:
         return float(r["threshold"]), int(r["horizon_days"])
 
     def get_capacity(self) -> Capacity:
-        return Capacity(crews_per_station=int(os.environ.get("CREWS_PER_STATION", 2)))
+        # The manager's Settings page writes crews_per_station to the shared app_settings row (core/app_settings.py); the env var is its default.
+        return Capacity(crews_per_station=read_settings(self.conn)["crews_per_station"])
+
+    def get_costs(self) -> dict:
+        s = read_settings(self.conn)
+        return {"cost_breakdown": s["cost_breakdown"], "cost_service": s["cost_service"]}
 
     def get_units(self) -> list[UnitInfo]:
         rows = self.conn.execute("SELECT id, source_engine, life_start_day, status FROM units ORDER BY id").fetchall()
@@ -144,17 +150,22 @@ class PgStore:
     def replan(self, build: Callable[[list[PlanItem]], PlanResult], sim_day: int) -> PlanResult:
         with self.conn.transaction():
             self.conn.execute("SELECT pg_advisory_xact_lock(%s)", (PLAN_LOCK_KEY,))
+            # Every open booking, including OVERDUE ones (planned_day < sim_day: nobody serviced it yet). The scheduler books an unserviced
+            # unit "today", so an overdue booking is the same booking rolled forward: compare it as booked for today. Filtering overdue rows
+            # out made the same unit look brand new every simulated day (a "Plan changed" event per day) and left the old rows behind.
             rows = self.conn.execute(
                 "SELECT unit_id, planned_day, expected_saving, reason, state FROM plan_items "
-                "WHERE state IN ('planned', 'needs_manager_decision') AND planned_day >= %s", (sim_day,)).fetchall()
-            previous = [PlanItem(unit_id=r["unit_id"], station_code=station_of(r["unit_id"]), planned_day=int(r["planned_day"]),
+                "WHERE state IN ('planned', 'needs_manager_decision')").fetchall()
+            previous = [PlanItem(unit_id=r["unit_id"], station_code=station_of(r["unit_id"]), planned_day=max(int(r["planned_day"]), sim_day),
                                  crew=0, expected_saving=float(r["expected_saving"] or 0), reason=r["reason"] or "",
                                  state=r["state"]) for r in rows]
+            overdue = any(int(r["planned_day"]) < sim_day for r in rows)
             result = build(previous)
-            if not result.changed and len(previous) == len(result.items):
+            # Nothing to rewrite only if the plan is unchanged AND no stored row has a stale (overdue) day.
+            if not result.changed and len(previous) == len(result.items) and not overdue:
                 return result
             techs = self._technicians()
-            self.conn.execute("DELETE FROM plan_items WHERE state IN ('planned', 'needs_manager_decision') AND planned_day >= %s", (sim_day,))
+            self.conn.execute("DELETE FROM plan_items WHERE state IN ('planned', 'needs_manager_decision')")  # all days; finished ('done') rows stay
             for it in result.items:
                 pool = techs.get(it.station_code) or []
                 tech = pool[it.crew] if it.crew < len(pool) else None

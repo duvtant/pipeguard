@@ -2,10 +2,11 @@
 import asyncio
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from api.deps import require_admin
 from core import reads
 from core.admin_ops import reset_demo
 from core.db import notify, session_scope
@@ -15,6 +16,10 @@ router = APIRouter(tags=["clock"])
 
 SPEED_MIN, SPEED_MAX = 0.25, 5.0   # seconds per simulated day
 ADVANCE_MAX = 1000                 # same cap the simulator applies
+# Play, pause and speed are the manager's replay controls (bounded: the worst case is a paused clock) and stay open. Reset wipes the whole
+# demo and advance can burn up to ADVANCE_MAX days of the scenario, so those two need the admin token, like /api/admin/reset (the same
+# operation) always did. Found open on the deployed server, Oct 4.
+ADMIN_ACTIONS = ("reset", "advance")
 
 
 class ClockBody(BaseModel):
@@ -48,9 +53,11 @@ def _apply(body: ClockBody) -> None:
 
 
 @router.post("/api/clock")
-async def set_clock(body: ClockBody):
+async def set_clock(body: ClockBody, x_admin_token: str | None = Header(default=None)):
     if body.action not in ("play", "pause", "speed", "advance", "reset"):
         raise HTTPException(422, "action must be play, pause, speed, advance or reset")
+    if body.action in ADMIN_ACTIONS:
+        require_admin(x_admin_token)
     if body.action == "reset":
         try:
             await asyncio.to_thread(reset_demo)

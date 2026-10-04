@@ -170,7 +170,8 @@ class Engine:
         plan_units = plan_units_from_rows(rows, {u.unit_id for u in units if u.failed}, urgency)
         capacity = self.store.get_capacity()
         constraints = self.store.get_constraints(sim_day)
-        params = PlanParams(cost_breakdown=COST_BREAKDOWN, cost_service=COST_SERVICE)
+        costs = getattr(self.store, "get_costs", None)  # the database store reads the manager's Settings; the in-memory test store does not
+        params = PlanParams(**costs()) if costs else PlanParams(cost_breakdown=COST_BREAKDOWN, cost_service=COST_SERVICE)
         return self.store.replan(lambda previous: build_plan(plan_units, capacity, constraints, params, sim_day,
                                                              previous, horizon_days=horizon), sim_day)
 

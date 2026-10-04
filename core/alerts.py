@@ -18,6 +18,7 @@ from datetime import timezone
 from sqlalchemy import text
 from sqlmodel import Session
 
+from core import app_settings
 from core.config import get_settings
 from core.db import notify, session_scope
 
@@ -86,8 +87,9 @@ def _backup_for(s: Session, unit_id: str, missed_tech_id: int):
 
 
 # ---------------------------------------------------------------- guardrails
-def _saving(p_fail: float) -> float:
-    return p_fail * settings.cost_breakdown - settings.cost_service
+def _saving(p_fail: float, costs: dict | None = None) -> float:
+    c = costs or {"cost_breakdown": settings.cost_breakdown, "cost_service": settings.cost_service}
+    return p_fail * c["cost_breakdown"] - c["cost_service"]
 
 
 def _dup_reason(s: Session, unit_id: str, day: int, p_now: float) -> str | None:
@@ -117,7 +119,8 @@ def create_call_requests(s: Session, sim_day: int | None = None, top_n: int = TO
     cands = [(r["unit_id"], r["p_fail_h"]) for r in latest
              if r["status"] == "at_risk" and r["unit_id"] not in busy]
     # Same order as the scheduler: saving rounded to $1,000, then unit id.
-    cands.sort(key=lambda c: (-round(_saving(c[1]), -3), c[0]))
+    costs = app_settings.read(s)  # the manager's Settings, so the call order matches the plan's
+    cands.sort(key=lambda c: (-round(_saving(c[1], costs), -3), c[0]))
 
     out: dict = {"created": [], "suppressed": []}
     for uid, p_now in cands[:top_n]:
@@ -143,7 +146,7 @@ def _ring(s: Session, unit_id: str, tech, day: int, attempt: int) -> int:
         "INSERT INTO call_requests (unit_id, technician_id, sim_day, state, attempt, ring_expires_at) "
         "VALUES (:u, :t, :d, 'ringing', :a, now() + make_interval(secs => :secs)) RETURNING id"),
         {"u": unit_id, "t": tech["id"], "d": day, "a": attempt,
-         "secs": float(settings.ring_seconds)}).scalar_one()
+         "secs": float(app_settings.read(s)["ring_timeout_secs"])}).scalar_one()
     add_event(s, day, "call_requested", unit_id, "Call requested",
               f"Calling {tech['name']} about {unit_id}." + (" (backup technician)" if attempt == 2 else ""),
               payload={"technician_id": tech["id"], "call_request_id": cid})
@@ -173,7 +176,7 @@ def miss_call(s: Session, cid: int, why: str = "expired") -> bool:
     if row is None:
         return False
     log.info("call %s (%s) %s", cid, row.unit_id, why)
-    if row.attempt == 1:
+    if row.attempt == 1 and app_settings.read(s)["call_backup_when_missed"]:  # Settings: "Call the backup technician if nobody answers"
         backup = _backup_for(s, row.unit_id, row.technician_id)
         if backup:
             _ring(s, row.unit_id, backup, row.sim_day, attempt=2)
