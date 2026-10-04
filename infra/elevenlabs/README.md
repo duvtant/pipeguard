@@ -32,6 +32,13 @@ elevenlabs agents status
 - **Tools, secret, environment variable, webhook** are created through the CLI (`tools add`, `agents secrets`, `environment-variables create`, `webhooks create`) or the dashboard. After creating them, `agents pull` and `tools pull` so the repo reflects reality, and set `prompt.tool_ids` and `platform_settings.workspace_overrides.webhooks.post_call_webhook_id`.
 - Never put a secret value in these JSON files. Tool auth headers reference a workspace **secret** by id.
 
+## Staged in the config, NOT pushed yet (Track D)
+`platform_settings` now also holds **guardrails** (Focus + Manipulation), a **4-rule call report card** (`evaluation.criteria`) and **30-day retention**, identical in both config files. They change the live agent only on `agents push`.
+- **Do not push without David's go-ahead.** A guardrail's default action is to end the call, so a false positive on stage would kill the demo.
+- Order: push to a spare/staging agent, make ~5 real calls with the demo script, check the report card and that no guardrail fires wrongly, then push to the demo agent. If anything misfires, leave guardrails off (our rules code is the real gate).
+- Never set `retention_days` to `0`. Keep both config files identical in `platform_settings`.
+- Impact notes: `docs/delegation/05_CHANGE_IMPACT_agent_hardening.md`.
+
 ## What is live (created by the CLI, read back and verified)
 | Thing | Value |
 |---|---|
