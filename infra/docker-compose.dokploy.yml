@@ -36,6 +36,10 @@ services:
       POSTGRES_USER: pipeguard
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pipeguard}
       POSTGRES_DB: pipeguard
+    # Private by default: bound to the server's own loopback, so nothing outside can reach it. To let ONE trusted machine in, set DB_BIND=0.0.0.0
+    # in the Dokploy Environment tab AND restrict port 5432 to that machine's IP in the Hetzner Cloud Firewall (Docker bypasses ufw).
+    ports:
+      - "${DB_BIND:-127.0.0.1}:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
