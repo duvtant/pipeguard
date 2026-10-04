@@ -78,7 +78,20 @@ export default function Impact() {
                     )
                   })}
                 </div>
-                {view === 'chart' ? (
+                {view === 'chart' && !data.series?.length ? (
+                  // The server does not send the cost-over-time series yet (an optional part of /api/simulate): show the three yearly totals as bars.
+                  <ul aria-label="Total cost by approach" className="m-0 mt-5 flex list-none flex-col gap-4 p-0">
+                    {(['run_to_failure', 'fixed_schedule', 'pipeguard'] as Policy[]).map((pol) => {
+                      const top = Math.max(...data.policies.map((r) => r.total_cost), 1)
+                      return (
+                        <li key={pol}>
+                          <div className="mb-1 flex items-baseline justify-between text-sm"><span className={pol === 'pipeguard' ? '[font-weight:var(--w-strong)] text-accent-ink' : 'text-muted'}>{NAMES[pol]}</span><span className="tnum text-ink">{moneyText(cost(pol))}</span></div>
+                          <div className="h-3 rounded-full bg-pill"><div className={`h-3 rounded-full ${pol === 'pipeguard' ? 'bg-accent' : pol === 'fixed_schedule' ? 'bg-[#7A8197]' : 'bg-[#B8BCCB]'}`} style={{ width: `${Math.max(2, (cost(pol) / top) * 100)}%` }} /></div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                ) : view === 'chart' ? (
                   <div className="-mx-6 mt-3.5">
                     <CompareChart height={220} label="Cumulative cost by policy over the replay" format={moneyText}
                       data={(data.series ?? []).map((d) => ({ x: `Day ${d.sim_day}`, run_to_failure: d.run_to_failure, fixed_schedule: d.fixed_schedule, pipeguard: d.pipeguard }))}
@@ -119,7 +132,9 @@ export default function Impact() {
             </div>
             {data && (saving > 0
               ? <Strip tone="calm" className="mt-auto" title={`Self-tuned beats default by ${moneyText(saving)}`} subtitle={`Threshold ${data.tuned.threshold.toFixed(2)} vs ${data.default.threshold.toFixed(2)}`} />
-              : <Strip tone="insight" className="mt-auto" title="Self-tuned matches the default" subtitle={`Threshold ${data.tuned.threshold.toFixed(2)} vs ${data.default.threshold.toFixed(2)}`} />)}
+              : saving < 0
+                ? <Strip tone="insight" className="mt-auto" title={`Self-tuned costs ${moneyText(-saving)} more, and warns earlier`} subtitle={`${data.headline.actioned} of ${data.headline.total} failures get the full ${data.headline.lead_days} days of warning`} />
+                : <Strip tone="insight" className="mt-auto" title="Self-tuned matches the default" subtitle={`Threshold ${data.tuned.threshold.toFixed(2)} vs ${data.default.threshold.toFixed(2)}`} />)}
           </Card>
         </motion.div>
       </div>
@@ -135,9 +150,9 @@ export default function Impact() {
               <div><div className="text-sm [font-weight:var(--w-strong)] text-accent-ink">Self-tuned</div>
                 <Num size="md" value={<ValueFlash value={data.tuned.total_cost} format={(n) => money(n).value} label="Self-tuned total cost" throttle={0} />} unit={money(data.tuned.total_cost).unit} />
                 <div className="tnum mt-1 text-[13px] text-muted">Alert threshold {data.tuned.threshold.toFixed(2)} · plan {data.tuned.horizon_days} days ahead</div></div>
-              <div className="rounded-[14px] bg-[image:var(--g-calm)] px-4 py-3"><div className="text-sm text-muted">{saving > 0 ? 'Saved by self-tuning' : 'Difference'}</div>
+              <div className="rounded-[14px] bg-[image:var(--g-calm)] px-4 py-3"><div className="text-sm text-muted">{saving > 0 ? 'Saved by self-tuning' : saving < 0 ? 'Extra cost of self-tuning' : 'Difference'}</div>
                 <Num size="md" value={<ValueFlash value={Math.abs(saving)} format={(n) => money(n).value} label="Saving from self-tuning" throttle={0} />} unit={money(Math.abs(saving)).unit} />
-                <div className="mt-1 text-[13px] text-muted">The system measured its own results and adjusted its threshold.</div></div>
+                <div className="mt-1 text-[13px] text-muted">{saving < 0 ? `It books earlier, so ${data.headline.actioned} of ${data.headline.total} failures get the full ${data.headline.lead_days} days of warning.` : 'The system measured its own results and adjusted its threshold.'}</div></div>
             </div>
           )}
         </Card>
