@@ -137,7 +137,7 @@ def submit_availability(s: Session, data: dict) -> dict:
     dayname = weekday_name(day, lang)
     try:
         from core.replan import replan  # commits first: the constraint is saved even if the re-plan fails
-        result = replan(s, reason=f"technician unavailable before {weekday_name(day)}")
+        result = replan(s, reason=f"technician unavailable before {weekday_name(day)}", source="voice")
     except Exception:
         log.exception("replan failed after constraint for %s", unit_id)
         return {"ok": True, "say": _t(lang, "degraded", unit=unit_id, day=dayname), "earliest_day": day}

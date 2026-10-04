@@ -24,7 +24,7 @@ def warm_up() -> None:
     return pg_store, pipeline, worker
 
 
-def replan(s: Session, reason: str | None = None, emit: bool = True):
+def replan(s: Session, reason: str | None = None, emit: bool = True, source: str | None = None):
     """Returns Olise's PlanResult. Writes plan_items and, if the plan changed, one plan_changed event."""
     from core.contracts import PlanParams
     from core.feedback import urgency_multipliers
@@ -52,6 +52,8 @@ def replan(s: Session, reason: str | None = None, emit: bool = True):
             if ev:
                 if reason:
                     ev = ev.model_copy(update={"detail": ev.detail.rstrip(".") + f" ({reason})."})
+                if source:  # source=voice marks the moves a manager still has to approve
+                    ev = ev.model_copy(update={"payload": {**ev.payload, "source": source}})
                 st.write_events([ev])
         return result
     finally:

@@ -56,7 +56,7 @@ def db():
 def predict(s, unit_id, p_fail, status="at_risk", day=10, rul_low=6.0, rul_high=14.0, reason="Fan speed drifting"):
     s.execute(text("INSERT INTO predictions (unit_id, sim_day, rul_low, rul_likely, rul_high, p_fail_h, status, reason, "
                    "confidence, model_version, data_source) VALUES (:u, :d, :lo, :li, :hi, :p, :st, :r, 'normal', 'v1', 'live') ON CONFLICT (unit_id, sim_day) DO UPDATE SET "
-                   "p_fail_h = :p, status = :st"),
+                   "p_fail_h = :p, status = :st, rul_low = :lo, rul_likely = :li, rul_high = :hi, reason = :r"),
               {"u": unit_id, "d": day, "lo": rul_low, "li": (rul_low + rul_high) / 2, "hi": rul_high,
                "p": p_fail, "st": status, "r": reason})
     s.commit()

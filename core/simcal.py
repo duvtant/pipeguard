@@ -16,3 +16,9 @@ def today_text(day: int) -> str:
     """'Tuesday, October 6': what the voice agent gets as sim_today."""
     d = day_date(day)
     return f"{d.strftime('%A, %B')} {d.day}"
+
+
+def format_sim_date(day: int) -> str:
+    """'Fri, Nov 6': how the dashboard writes a sim date in event text."""
+    d = day_date(day)
+    return f"{d.strftime('%a, %b')} {d.day}"

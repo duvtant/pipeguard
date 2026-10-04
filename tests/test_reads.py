@@ -21,7 +21,7 @@ FLEET_KEYS = {"unit_id", "station_code", "station", "risk_status", "sensor_issue
               "data_source", "model_version"}
 EVENT_KEYS = {"event_id", "type", "sim_day", "unit_id", "title", "detail", "severity", "payload"}
 PLAN_KEYS = {"id", "unit_id", "station_code", "planned_day", "planned_date", "technician_id", "technician_name",
-             "expected_saving", "reason", "state"}
+             "expected_saving", "reason", "state", "approval"}
 
 
 def run(db, sql, **p):
@@ -166,11 +166,13 @@ def test_call_without_report_card_omits_it_and_unfinished_calls_are_hidden(world
 # ---------------------------------------------------------------- plan and work orders
 def test_plan_items(world):
     items = client.get("/api/plan").json()
-    assert all(set(i) == PLAN_KEYS for i in items)
-    assert [(i["unit_id"], i["planned_day"]) for i in items] == [("EDS-01", 10), ("EDS-02", 11), ("EDS-04", 12)]
-    first, middle = items[0], items[1]
+    assert all(set(i) - {"decision"} == PLAN_KEYS for i in items)
+    # EDS-05 is red with no crew slot: it has no row, so it appears as a manager card for today
+    assert [(i["unit_id"], i["planned_day"]) for i in items] == [("EDS-01", 10), ("EDS-05", 10), ("EDS-02", 11), ("EDS-04", 12)]
+    first, middle = items[0], items[2]
     assert (first["planned_date"], first["technician_name"], first["station_code"]) == ("2026-10-15", "Anna Primary", "EDS")
     assert middle["technician_id"] == 0 and middle["technician_name"] == "Unassigned" and middle["state"] == "needs_manager_decision"
+    assert items[1]["state"] == "needs_manager_decision" and items[1]["id"] >= 1_000_000
 
 
 def test_old_finished_work_drops_out_of_the_plan(world):

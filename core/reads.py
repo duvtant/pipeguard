@@ -14,6 +14,7 @@ from sqlalchemy import text
 from sqlmodel import Session
 
 from core.config import get_settings
+from core import approvals
 from core.contracts import display_status
 from core.simcal import day_date, weekday
 
@@ -70,13 +71,20 @@ ORDER BY u.id
 """
 
 
-def _fleet_unit(r) -> dict:
+def _fleet_unit(r, decision: dict | None = None, today: int = 0) -> dict:
     risk = r["p_status"] if r["p_status"] in ("healthy", "watch", "at_risk") else "healthy"
     failed = r["unit_status"] == "failed"
     sensor_issue = bool(r["sensor_issue"])
     has_prediction = r["p_status"] is not None
     # An at-risk unit that no crew slot could take never gets a plan row, so "no row" is the signal (item 2).
     no_slot = risk == "at_risk" and not failed and not r["has_plan"]
+    next_day = r["next_day"]
+    if decision:  # a manager already decided: no more warning, and overtime is a real service day
+        no_slot, flagged = False, False
+        if decision["choice"] == "overtime" and next_day is None and (decision["day"] or -1) >= today:
+            next_day = decision["day"]
+    else:
+        flagged = bool(r["flagged"])
     return {
         "unit_id": r["unit_id"], "station_code": r["station_code"], "station": r["station"],
         "risk_status": risk, "sensor_issue": sensor_issue, "display_status": display_status(risk, sensor_issue),
@@ -84,7 +92,7 @@ def _fleet_unit(r) -> dict:
         "p_fail": float(r["p_fail_h"] or 0), "confidence": r["confidence"] or ("normal" if has_prediction else "low"),
         "reason": r["reason"] or ("" if has_prediction else "Waiting for the first prediction."),
         "top_sensors": list(r["top_sensors"] or []),
-        "next_service_day": r["next_day"], "needs_manager_decision": bool(r["flagged"] or no_slot),
+        "next_service_day": next_day, "needs_manager_decision": bool(flagged or no_slot),
         "failed": failed, "data_source": r["data_source"] or "live", "model_version": r["model_version"] or "v1",
     }
 
@@ -92,7 +100,9 @@ def _fleet_unit(r) -> dict:
 def fleet(s: Session) -> dict:
     clock = clock_view(s)
     rows = _rows(s, _FLEET_SQL.format(where=""), day=clock["sim_day"])
-    return {"sim_day": clock["sim_day"], "clock": clock, "units": [_fleet_unit(r) for r in rows]}
+    dec = approvals.decisions(s)
+    return {"sim_day": clock["sim_day"], "clock": clock,
+            "units": [_fleet_unit(r, dec.get(r["unit_id"]), clock["sim_day"]) for r in rows]}
 
 
 # ---------------------------------------------------------------- events
@@ -182,7 +192,7 @@ def unit_detail(s: Session, unit_id: str) -> dict | None:
                for code, label in SENSOR_LABELS.items()]
     flags = _rows(s, "SELECT id, unit_id, sim_day, sensor, flag_type, resolved_day FROM quality_flags "
                      "WHERE unit_id = :u ORDER BY id", u=unit_id)
-    return {**_fleet_unit(rows[0]),
+    return {**_fleet_unit(rows[0], approvals.decisions(s).get(unit_id), day),
             "history": [{"sim_day": h["sim_day"], "rul_low": float(h["rul_low"]), "rul_likely": float(h["rul_likely"]),
                          "rul_high": float(h["rul_high"]), "p_fail": float(h["p_fail_h"])} for h in hist],
             "sensors": sensors, "events": unit_events(s, unit_id), "calls": calls_for_unit(s, unit_id),
@@ -195,31 +205,80 @@ SELECT p.id, p.unit_id, st.code AS station_code, p.planned_day, p.technician_id,
        p.expected_saving, p.reason, p.state
 FROM plan_items p JOIN units u ON u.id = p.unit_id JOIN stations st ON st.id = u.station_id
 LEFT JOIN technicians t ON t.id = p.technician_id
-WHERE (p.state <> 'done' OR p.planned_day >= :since) {where}
+WHERE (p.state <> 'done' OR p.planned_day >= :since)
 ORDER BY p.planned_day, p.unit_id
 """
 
+# At-risk units that no crew slot could take have no plan row, so the manager's card is built from this.
+_NO_SLOT_SQL = """
+SELECT u.id AS unit_id, st.code AS station_code, p.p_fail_h,
+       (SELECT t.id FROM technicians t WHERE t.station_id = u.station_id ORDER BY t.is_backup, t.id LIMIT 1) AS tech_id,
+       (SELECT t.name FROM technicians t WHERE t.station_id = u.station_id ORDER BY t.is_backup, t.id LIMIT 1) AS tech_name
+FROM units u JOIN stations st ON st.id = u.station_id
+JOIN LATERAL (SELECT status, p_fail_h FROM predictions WHERE unit_id = u.id AND sim_day <= :day
+              ORDER BY sim_day DESC LIMIT 1) p ON true
+WHERE u.status <> 'failed' AND p.status = 'at_risk'
+  AND NOT EXISTS (SELECT 1 FROM plan_items pi WHERE pi.unit_id = u.id AND pi.state IN ('planned', 'needs_manager_decision'))
+ORDER BY u.id
+"""
 
-def plan_items(s: Session, only_planned: bool = False) -> list[dict]:
+
+def _item(row_id, unit_id, station, day, tech_id, tech_name, saving, reason, state, approval, decision=None) -> dict:
+    out = {"id": row_id, "unit_id": unit_id, "station_code": station, "planned_day": day,
+           "planned_date": day_date(day).isoformat(), "technician_id": tech_id if tech_id is not None else 0,
+           "technician_name": tech_name or "Unassigned", "expected_saving": float(saving or 0),
+           "reason": reason or "", "state": state, "approval": approval}
+    if decision:
+        out["decision"] = decision
+    return out
+
+
+def plan_items(s: Session) -> list[dict]:
+    """Plan rows plus what the manager screens need: approval on every item, a card for each unit no crew
+    could take, and overtime items. Items are sorted by day."""
     day = int(sim_state(s)["sim_day"])
-    rows = _rows(s, _PLAN_SQL.format(where="AND p.state = 'planned'" if only_planned else ""), since=day - 7)
-    return [{"id": r["id"], "unit_id": r["unit_id"], "station_code": r["station_code"],
-             "planned_day": r["planned_day"], "planned_date": day_date(r["planned_day"]).isoformat(),
-             "technician_id": r["technician_id"] if r["technician_id"] is not None else 0,
-             "technician_name": r["technician_name"] or "Unassigned",
-             "expected_saving": float(r["expected_saving"] or 0), "reason": r["reason"] or "", "state": r["state"]}
-            for r in rows]
+    props, dec = approvals.proposed(s), approvals.decisions(s)
+    items = []
+    for r in _rows(s, _PLAN_SQL, since=day - 7):
+        d = dec.get(r["unit_id"])
+        if r["state"] == "needs_manager_decision":
+            if d and d["choice"] == "overtime" and (d["day"] or -1) >= day:   # resolved: an extra crew tomorrow
+                items.append(_item(r["id"], r["unit_id"], r["station_code"], d["day"], r["technician_id"], r["technician_name"],
+                                   r["expected_saving"], r["reason"], "planned", "approved", "overtime"))
+            else:
+                items.append(_item(r["id"], r["unit_id"], r["station_code"], r["planned_day"], r["technician_id"],
+                                   r["technician_name"], r["expected_saving"], r["reason"], r["state"], "proposed",
+                                   "deferred" if d and d["choice"] == "deferred" else None))
+            continue
+        proposal = r["state"] == "planned" and (r["unit_id"], r["planned_day"]) in props
+        items.append(_item(r["id"], r["unit_id"], r["station_code"], r["planned_day"], r["technician_id"],
+                           r["technician_name"], r["expected_saving"], r["reason"], r["state"],
+                           "proposed" if proposal else "approved"))
+    for r in _rows(s, _NO_SLOT_SQL, day=day):
+        d = dec.get(r["unit_id"])
+        saving = float(r["p_fail_h"]) * settings.cost_breakdown - settings.cost_service
+        why = "No crew slot is free this week."
+        if d and d["choice"] == "overtime":
+            if (d["day"] or -1) >= day:
+                items.append(_item(approvals.synth_id(r["unit_id"]), r["unit_id"], r["station_code"], d["day"], r["tech_id"],
+                                   r["tech_name"], saving, "Overtime crew approved by a manager.", "planned", "approved", "overtime"))
+        else:
+            items.append(_item(approvals.synth_id(r["unit_id"]), r["unit_id"], r["station_code"], day, None, None, saving,
+                               why + " A manager needs to decide.", "needs_manager_decision", "proposed",
+                               "deferred" if d else None))
+    return sorted(items, key=lambda i: (i["planned_day"], i["unit_id"]))
 
 
 def work_orders_csv(s: Session) -> tuple[str, str]:
-    """(filename, csv text with a BOM so Excel opens the UTF-8 cleanly). This week's planned work only."""
+    """(filename, csv text with a BOM so Excel opens the UTF-8 cleanly). Approved planned work only."""
     day = int(sim_state(s)["sim_day"])
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(["date", "station", "unit", "technician", "expected_saving", "reason"])
-    for p in plan_items(s, only_planned=True):
-        w.writerow([p["planned_date"], p["station_code"], p["unit_id"], p["technician_name"],
-                    p["expected_saving"], p["reason"]])
+    for p in plan_items(s):
+        if p["state"] == "planned" and p["approval"] == "approved":
+            w.writerow([p["planned_date"], p["station_code"], p["unit_id"], p["technician_name"],
+                        p["expected_saving"], p["reason"]])
     return f"work_orders_day_{day}.csv", "\ufeff" + buf.getvalue()
 
 
