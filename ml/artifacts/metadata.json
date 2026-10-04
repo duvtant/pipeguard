@@ -1,0 +1,585 @@
+{
+ "model_version": "v1",
+ "trained_at": "2026-10-03T09:54:46-06:00",
+ "git_commit": "fecb4e8",
+ "rul_cap": 125,
+ "quantiles": [
+  0.1,
+  0.5,
+  0.9
+ ],
+ "lightgbm": "4.7.0",
+ "params": {
+  "objective": "quantile",
+  "n_estimators": 600,
+  "learning_rate": 0.03,
+  "num_leaves": 31,
+  "min_child_samples": 40,
+  "subsample": 0.8,
+  "subsample_freq": 1,
+  "colsample_bytree": 0.8,
+  "random_state": 42,
+  "deterministic": true,
+  "force_row_wise": true,
+  "verbose": -1,
+  "n_jobs": 4
+ },
+ "augmentation": {
+  "single_rate": 0.05,
+  "runs_per_engine": 2,
+  "dead_engine_frac": 0.1,
+  "plus_clean_copy": true
+ },
+ "widen_factor": 1.2971,
+ "cv": {
+  "folds": 5,
+  "rmse": 14.190714235540996,
+  "mae": 8.984852917241167,
+  "nasa_score": 85779.78541032465,
+  "coverage_80": 0.7999612234016771,
+  "coverage_80_before_widening": 0.6510106150937909
+ },
+ "train_seconds": 436.3,
+ "test": {
+  "mae_raw": 11.418759530466794,
+  "rmse": 14.296963247205971,
+  "mae": 10.348759530466795,
+  "nasa_score": 396.8635607290124,
+  "failing": 25,
+  "caught": 18,
+  "missed": 7,
+  "extra": 1,
+  "coverage_80": 0.82
+ },
+ "baseline_linear_test": {
+  "model": "linear, starter features, uncapped target",
+  "mae_raw": 27.509377145990797,
+  "rmse": 34.86918379821357,
+  "mae": 27.80240014176487,
+  "nasa_score": 26282.315630693898,
+  "failing": 25,
+  "caught": 12,
+  "missed": 13,
+  "extra": 0
+ },
+ "quick_untuned_test": {
+  "model": "LightGBM defaults, 14 sensors + cycle, capped 125",
+  "mae_raw": 14.245975886167901,
+  "rmse": 17.67231783937835,
+  "mae": 13.175975886167901,
+  "nasa_score": 602.7245373718554,
+  "failing": 25,
+  "caught": 19,
+  "missed": 6,
+  "extra": 1
+ },
+ "calibration": {
+  "horizon": 14,
+  "threshold": 0.5,
+  "rows_flagged": 1452,
+  "precision_at_threshold": 0.9263085399449036,
+  "recall_at_threshold": 0.8966666666666666,
+  "brier": 0.012204358232736459,
+  "reliability": [
+   {
+    "p_from": 0,
+    "p_to": 0.1,
+    "rows": 18902,
+    "mean_p": 0.0003991322201738079,
+    "observed": 0.002856840545973971
+   },
+   {
+    "p_from": 0.1,
+    "p_to": 0.3,
+    "rows": 149,
+    "mean_p": 0.1952059859617658,
+    "observed": 0.30201342281879195
+   },
+   {
+    "p_from": 0.3,
+    "p_to": 0.5,
+    "rows": 128,
+    "mean_p": 0.4007408352174263,
+    "observed": 0.4375
+   },
+   {
+    "p_from": 0.5,
+    "p_to": 0.7,
+    "rows": 528,
+    "mean_p": 0.5790406316603833,
+    "observed": 0.8446969696969697
+   },
+   {
+    "p_from": 0.7,
+    "p_to": 0.9,
+    "rows": 270,
+    "mean_p": 0.7922105540091386,
+    "observed": 0.9444444444444444
+   },
+   {
+    "p_from": 0.9,
+    "p_to": 1.0,
+    "rows": 654,
+    "mean_p": 0.9924694396719318,
+    "observed": 0.9847094801223242
+   }
+  ]
+ },
+ "dead_sensor": [
+  {
+   "sensor": "s2",
+   "label": "Low-pressure compressor outlet temperature",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 11.391418375518533,
+   "mae_dead_from_midlife": 11.343557174766886
+  },
+  {
+   "sensor": "s3",
+   "label": "High-pressure compressor outlet temperature",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 12.87087173774984,
+   "mae_dead_from_midlife": 12.857070201447755
+  },
+  {
+   "sensor": "s4",
+   "label": "Low-pressure turbine outlet temperature",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 10.983190041674941,
+   "mae_dead_from_midlife": 10.914849825457646
+  },
+  {
+   "sensor": "s7",
+   "label": "High-pressure compressor outlet pressure",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 11.14102605978207,
+   "mae_dead_from_midlife": 11.07744627314847
+  },
+  {
+   "sensor": "s8",
+   "label": "Fan speed",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 10.88536061759101,
+   "mae_dead_from_midlife": 10.896205177436682
+  },
+  {
+   "sensor": "s9",
+   "label": "Core speed",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 12.89903705851027,
+   "mae_dead_from_midlife": 12.915806601233363
+  },
+  {
+   "sensor": "s11",
+   "label": "High-pressure compressor static pressure",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 11.77124296034187,
+   "mae_dead_from_midlife": 11.78790673390209
+  },
+  {
+   "sensor": "s12",
+   "label": "Fuel flow to pressure ratio",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 11.119668290811576,
+   "mae_dead_from_midlife": 11.137522272079996
+  },
+  {
+   "sensor": "s13",
+   "label": "Corrected fan speed",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 10.597464153019546,
+   "mae_dead_from_midlife": 10.617938071524911
+  },
+  {
+   "sensor": "s14",
+   "label": "Corrected core speed",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 11.819024998048716,
+   "mae_dead_from_midlife": 11.858305282524976
+  },
+  {
+   "sensor": "s15",
+   "label": "Bypass ratio",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 13.66601522046624,
+   "mae_dead_from_midlife": 13.296172058794777
+  },
+  {
+   "sensor": "s17",
+   "label": "Bleed enthalpy",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 12.103985579313886,
+   "mae_dead_from_midlife": 12.04823208517264
+  },
+  {
+   "sensor": "s20",
+   "label": "High-pressure turbine coolant bleed",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 9.934739382057723,
+   "mae_dead_from_midlife": 9.920842242448519
+  },
+  {
+   "sensor": "s21",
+   "label": "Low-pressure turbine coolant bleed",
+   "clean_mae": 10.348759530466795,
+   "mae_dead_from_day0": 10.880910324687381,
+   "mae_dead_from_midlife": 10.897558642207821
+  }
+ ],
+ "acceptance": {
+  "beats_baseline_rmse": true,
+  "beats_baseline_mae": true,
+  "beats_baseline_nasa": true,
+  "coverage_in_70_90": true,
+  "caught_at_least_18_of_25": true
+ },
+ "tuned": {
+  "threshold": 0.3,
+  "horizon_days": 21,
+  "tuned_at": "2026-10-03T15:55:20+00:00"
+ },
+ "tuning": {
+  "threshold": 0.3,
+  "horizon_days": 21,
+  "total_cost": 4120000.0,
+  "tuned_at": "2026-10-03T15:55:20+00:00",
+  "inputs": {
+   "crews_per_station": 2,
+   "cost_breakdown": 200000,
+   "cost_service": 20000,
+   "service_level": 0.9
+  },
+  "default": {
+   "threshold": 0.5,
+   "horizon_days": 14,
+   "total_cost": 3920000.0,
+   "detected": 22,
+   "actioned": 22,
+   "total": 100,
+   "meets_service_level": false
+  },
+  "tuned": {
+   "threshold": 0.3,
+   "horizon_days": 21,
+   "total_cost": 4120000.0,
+   "detected": 96,
+   "actioned": 96,
+   "total": 100,
+   "meets_service_level": true
+  },
+  "lowest_cost_ignoring_service_level": {
+   "threshold": 0.2,
+   "horizon_days": 7,
+   "total_cost": 3800000.0,
+   "detected": 2,
+   "actioned": 2,
+   "total": 100,
+   "meets_service_level": false
+  },
+  "grid": [
+   {
+    "threshold": 0.2,
+    "horizon_days": 7,
+    "total_cost": 3800000.0,
+    "detected": 2,
+    "actioned": 2,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.3,
+    "horizon_days": 7,
+    "total_cost": 4140000.0,
+    "detected": 1,
+    "actioned": 1,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.4,
+    "horizon_days": 7,
+    "total_cost": 4860000.0,
+    "detected": 1,
+    "actioned": 1,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.5,
+    "horizon_days": 7,
+    "total_cost": 5220000.0,
+    "detected": 0,
+    "actioned": 0,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.6,
+    "horizon_days": 7,
+    "total_cost": 15580000.0,
+    "detected": 0,
+    "actioned": 0,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.7,
+    "horizon_days": 7,
+    "total_cost": 21300000.0,
+    "detected": 0,
+    "actioned": 0,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.8,
+    "horizon_days": 7,
+    "total_cost": 25960000.0,
+    "detected": 0,
+    "actioned": 0,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.2,
+    "horizon_days": 14,
+    "total_cost": 4000000.0,
+    "detected": 41,
+    "actioned": 41,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.3,
+    "horizon_days": 14,
+    "total_cost": 3960000.0,
+    "detected": 35,
+    "actioned": 35,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.4,
+    "horizon_days": 14,
+    "total_cost": 3960000.0,
+    "detected": 30,
+    "actioned": 30,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.5,
+    "horizon_days": 14,
+    "total_cost": 3920000.0,
+    "detected": 22,
+    "actioned": 22,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.6,
+    "horizon_days": 14,
+    "total_cost": 7280000.0,
+    "detected": 7,
+    "actioned": 7,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.7,
+    "horizon_days": 14,
+    "total_cost": 8000000.0,
+    "detected": 3,
+    "actioned": 3,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.8,
+    "horizon_days": 14,
+    "total_cost": 10480000.0,
+    "detected": 2,
+    "actioned": 2,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.2,
+    "horizon_days": 21,
+    "total_cost": 4200000.0,
+    "detected": 97,
+    "actioned": 97,
+    "total": 100,
+    "meets_service_level": true
+   },
+   {
+    "threshold": 0.3,
+    "horizon_days": 21,
+    "total_cost": 4120000.0,
+    "detected": 96,
+    "actioned": 96,
+    "total": 100,
+    "meets_service_level": true
+   },
+   {
+    "threshold": 0.4,
+    "horizon_days": 21,
+    "total_cost": 4100000.0,
+    "detected": 89,
+    "actioned": 89,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.5,
+    "horizon_days": 21,
+    "total_cost": 4080000.0,
+    "detected": 84,
+    "actioned": 84,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.6,
+    "horizon_days": 21,
+    "total_cost": 4700000.0,
+    "detected": 50,
+    "actioned": 50,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.7,
+    "horizon_days": 21,
+    "total_cost": 7520000.0,
+    "detected": 36,
+    "actioned": 36,
+    "total": 100,
+    "meets_service_level": false
+   },
+   {
+    "threshold": 0.8,
+    "horizon_days": 21,
+    "total_cost": 7520000.0,
+    "detected": 29,
+    "actioned": 29,
+    "total": 100,
+    "meets_service_level": false
+   }
+  ],
+  "held_out": {
+   "tuned_on": "folds 0-2 (60 engines)",
+   "reported_on": "folds 3-4 (40 engines)",
+   "tuned_setting": {
+    "threshold": 0.3,
+    "horizon_days": 21
+   },
+   "default_on_held_out": {
+    "threshold": 0.5,
+    "horizon_days": 14,
+    "total_cost": 1500000.0,
+    "detected": 14,
+    "actioned": 14,
+    "total": 40,
+    "meets_service_level": false
+   },
+   "tuned_on_held_out": {
+    "threshold": 0.3,
+    "horizon_days": 21,
+    "total_cost": 1600000.0,
+    "detected": 40,
+    "actioned": 40,
+    "total": 40,
+    "meets_service_level": true
+   },
+   "same_choice_as_full_grid": true
+  },
+  "impact": {
+   "policies": [
+    {
+     "policy": "run_to_failure",
+     "breakdowns": 181,
+     "planned_services": 0,
+     "wasted_services": 0,
+     "crew_days": 0,
+     "total_cost": 36200000.0,
+     "operating_days": 36500,
+     "cost_per_operating_day": 991.7808219178082
+    },
+    {
+     "policy": "fixed_schedule",
+     "breakdowns": 0,
+     "planned_services": 337,
+     "wasted_services": 234,
+     "crew_days": 337,
+     "total_cost": 6740000.0,
+     "operating_days": 36500,
+     "cost_per_operating_day": 184.65753424657535
+    },
+    {
+     "policy": "pipeguard",
+     "breakdowns": 0,
+     "planned_services": 206,
+     "wasted_services": 0,
+     "crew_days": 206,
+     "total_cost": 4120000.0,
+     "operating_days": 36500,
+     "cost_per_operating_day": 112.87671232876713
+    }
+   ],
+   "default": {
+    "threshold": 0.5,
+    "horizon_days": 14,
+    "total_cost": 3920000.0,
+    "detected": 22,
+    "actioned": 22,
+    "total": 100,
+    "meets_service_level": false
+   },
+   "tuned": {
+    "threshold": 0.3,
+    "horizon_days": 21,
+    "total_cost": 4120000.0,
+    "detected": 96,
+    "actioned": 96,
+    "total": 100,
+    "meets_service_level": true
+   },
+   "headline": {
+    "detected": 96,
+    "actioned": 96,
+    "total": 100,
+    "lead_days": 14,
+    "text": "PipeGuard would have caught 96 of 100 failures at least 14 days early.",
+    "false_alarms": 0,
+    "false_alarm_days": 60,
+    "lead_time_p10": 15.0,
+    "lead_time_median": 20.0,
+    "lead_time_p90": 26.0,
+    "definition": "Each of the 100 NASA training engines followed once to failure, judged by cross-fitted predictions. Detected: confirmed at risk at least 14 days before the real failure (96). Actioned: detected and serviced before failure with 2 crew(s) per station (96). False alarm: first flagged with 60 or more days left (0)."
+   },
+   "assumptions": [
+    "Costs: one simulated year of the 100-unit demo fleet (the NASA FD001 training engines), units at staggered ages.",
+    "A unit that is serviced or breaks down is renewed and starts a new life the next day.",
+    "Predictions are cross-fitted: every engine is judged by a model that never saw it.",
+    "Each station has crews_per_station service slots per day, shared by its 20 units; PipeGuard services confirmed at-risk units in order of expected saving.",
+    "Fixed schedule services each unit at age 120 days.",
+    "A wasted service is one done with more than 60 days of true life left.",
+    "Headline: each of the 100 engines followed once to failure; 'caught' means confirmed at risk at least 14 days before failure and serviced in time.",
+    "Costs are illustrative assumptions; the company is fictional."
+   ]
+  }
+ },
+ "headline": {
+  "detected": 96,
+  "actioned": 96,
+  "total": 100,
+  "lead_days": 14,
+  "text": "PipeGuard would have caught 96 of 100 failures at least 14 days early.",
+  "false_alarms": 0,
+  "false_alarm_days": 60,
+  "lead_time_p10": 15.0,
+  "lead_time_median": 20.0,
+  "lead_time_p90": 26.0,
+  "definition": "Each of the 100 NASA training engines followed once to failure, judged by cross-fitted predictions. Detected: confirmed at risk at least 14 days before the real failure (96). Actioned: detected and serviced before failure with 2 crew(s) per station (96). False alarm: first flagged with 60 or more days left (0)."
+ }
+}
